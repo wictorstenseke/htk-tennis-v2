@@ -1,9 +1,18 @@
-import { collection, getDocs } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  orderBy,
+  query,
+  Timestamp,
+} from "firebase/firestore";
 
 import { db } from "./firebase";
 
 import type {
   ApiError,
+  Booking,
+  CreateBookingInput,
   CreatePostInput,
   PaginationParams,
   Post,
@@ -149,20 +158,311 @@ export const usersApi = {
     try {
       const usersCollection = collection(db, "users");
       const snapshot = await getDocs(usersCollection);
-      
+
       return snapshot.docs.map((doc) => {
         const data = doc.data();
         // Validate and construct User object with proper type checking
         return {
           uid: doc.id,
           email: typeof data.email === "string" ? data.email : "",
-          displayName: typeof data.displayName === "string" ? data.displayName : undefined,
-          createdAt: typeof data.createdAt === "string" ? data.createdAt : undefined,
+          displayName:
+            typeof data.displayName === "string" ? data.displayName : undefined,
+          createdAt:
+            typeof data.createdAt === "string" ? data.createdAt : undefined,
         };
       });
     } catch (error) {
       throw new ApiException(
         error instanceof Error ? error.message : "Failed to fetch users",
+        0
+      );
+    }
+  },
+};
+
+/**
+ * Normalize booking data from Firestore to our standard Booking format
+ * Handles both legacy formats (startTime/endTime) and new format (startDate/endDate)
+ */
+const normalizeBookingFromFirestore = (
+  docId: string,
+  data: Record<string, unknown>
+): Booking | null => {
+  // Try different possible field names (handle both old and new formats)
+  // Standard: startDate/endDate (new bookings)
+  // Legacy: startTime/endTime (old bookings)
+  const startDateField = data.startDate || data.startAt || data.startTime;
+  const endDateField = data.endDate || data.endAt || data.endTime;
+  const createdAtField = data.createdAt || data.created_at;
+
+  let startDateISO = "";
+  let endDateISO = "";
+  let createdAtISO = "";
+
+  // Handle startDate
+  if (startDateField instanceof Timestamp) {
+    startDateISO = startDateField.toDate().toISOString();
+  } else if (startDateField instanceof Date) {
+    startDateISO = startDateField.toISOString();
+  } else if (typeof startDateField === "string") {
+    startDateISO = startDateField;
+  }
+
+  // Handle endDate
+  if (endDateField instanceof Timestamp) {
+    endDateISO = endDateField.toDate().toISOString();
+  } else if (endDateField instanceof Date) {
+    endDateISO = endDateField.toISOString();
+  } else if (typeof endDateField === "string") {
+    endDateISO = endDateField;
+  }
+
+  // Handle createdAt
+  if (createdAtField instanceof Timestamp) {
+    createdAtISO = createdAtField.toDate().toISOString();
+  } else if (createdAtField instanceof Date) {
+    createdAtISO = createdAtField.toISOString();
+  } else if (typeof createdAtField === "string") {
+    createdAtISO = createdAtField;
+  }
+
+  // Skip bookings with invalid dates
+  if (!startDateISO || !endDateISO) {
+    return null;
+  }
+
+  const userId =
+    typeof data.userId === "string"
+      ? data.userId
+      : data.userId === null || data.userId === undefined
+        ? ""
+        : String(data.userId);
+
+  return {
+    id: docId,
+    userId,
+    startDate: startDateISO,
+    endDate: endDateISO,
+    createdAt: createdAtISO || new Date().toISOString(),
+  };
+};
+
+/**
+ * API Client - Bookings endpoints
+ */
+export const bookingsApi = {
+  /**
+   * Get all bookings from Firestore, sorted by startDate descending
+   */
+  getBookings: async (): Promise<Booking[]> => {
+    try {
+      const bookingsCollection = collection(db, "bookings");
+      let snapshot;
+
+      try {
+        // Try with orderBy on startDate first (for new bookings)
+        const q = query(bookingsCollection, orderBy("startDate", "desc"));
+        snapshot = await getDocs(q);
+      } catch (indexError) {
+        try {
+          // Try with orderBy on startTime (for old bookings)
+          const q = query(bookingsCollection, orderBy("startTime", "desc"));
+          snapshot = await getDocs(q);
+        } catch (indexError2) {
+          // If neither index exists, fetch without orderBy and sort in memory
+          console.warn(
+            "Firestore index for startDate/startTime not found, fetching without orderBy. Errors:",
+            indexError,
+            indexError2
+          );
+          snapshot = await getDocs(bookingsCollection);
+        }
+      }
+
+      const bookings = snapshot.docs
+        .map((doc) => normalizeBookingFromFirestore(doc.id, doc.data()))
+        .filter((booking): booking is Booking => booking !== null);
+
+      // Sort by startDate descending (in case we fetched without orderBy)
+      bookings.sort((a, b) => {
+        const aTime = new Date(a.startDate).getTime();
+        const bTime = new Date(b.startDate).getTime();
+        return bTime - aTime;
+      });
+
+      return bookings;
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to fetch bookings",
+        0
+      );
+    }
+  },
+
+  /**
+   * Get bookings for a specific date (YYYY-MM-DD format)
+   */
+  getBookingsByDate: async (dateKey: string): Promise<Booking[]> => {
+    try {
+      const startOfDay = new Date(dateKey);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(dateKey);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const bookingsCollection = collection(db, "bookings");
+      // Fetch all bookings and filter in memory since we need to check both startDate and startTime fields
+      // Firestore doesn't support OR queries easily, so we'll fetch all and filter
+      const snapshot = await getDocs(bookingsCollection);
+
+      return snapshot.docs
+        .map((doc) => {
+          const data = doc.data();
+
+          // Try different possible field names
+          const startDateField =
+            data.startDate || data.startAt || data.startTime;
+          const endDateField = data.endDate || data.endAt || data.endTime;
+          const createdAtField = data.createdAt || data.created_at;
+
+          let startDateISO = "";
+          let endDateISO = "";
+          let createdAtISO = "";
+
+          // Handle startDate
+          if (startDateField instanceof Timestamp) {
+            startDateISO = startDateField.toDate().toISOString();
+          } else if (startDateField instanceof Date) {
+            startDateISO = startDateField.toISOString();
+          } else if (typeof startDateField === "string") {
+            startDateISO = startDateField;
+          }
+
+          // Handle endDate
+          if (endDateField instanceof Timestamp) {
+            endDateISO = endDateField.toDate().toISOString();
+          } else if (endDateField instanceof Date) {
+            endDateISO = endDateField.toISOString();
+          } else if (typeof endDateField === "string") {
+            endDateISO = endDateField;
+          }
+
+          // Handle createdAt
+          if (createdAtField instanceof Timestamp) {
+            createdAtISO = createdAtField.toDate().toISOString();
+          } else if (createdAtField instanceof Date) {
+            createdAtISO = createdAtField.toISOString();
+          } else if (typeof createdAtField === "string") {
+            createdAtISO = createdAtField;
+          }
+
+          // Skip bookings with invalid dates
+          if (!startDateISO || !endDateISO) {
+            return null;
+          }
+
+          return {
+            id: doc.id,
+            userId: typeof data.userId === "string" ? data.userId : "",
+            startDate: startDateISO,
+            endDate: endDateISO,
+            createdAt: createdAtISO,
+          };
+        })
+        .filter((booking): booking is Booking => booking !== null);
+    } catch (error) {
+      throw new ApiException(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch bookings by date",
+        0
+      );
+    }
+  },
+
+  /**
+   * Check if a time slot is available (no overlapping bookings)
+   * Note: Firestore doesn't support multiple inequality filters on different fields,
+   * so we fetch bookings that might overlap and filter in memory
+   */
+  checkAvailability: async (
+    startDate: Date,
+    endDate: Date
+  ): Promise<{ isAvailable: boolean; conflictingBookings: Booking[] }> => {
+    try {
+      const bookingsCollection = collection(db, "bookings");
+      // Fetch all bookings and filter in memory since we need to check both startDate and startTime fields
+      const snapshot = await getDocs(bookingsCollection);
+
+      const requestedStart = startDate.getTime();
+      const requestedEnd = endDate.getTime();
+
+      const conflictingBookings = snapshot.docs
+        .map((doc) => normalizeBookingFromFirestore(doc.id, doc.data()))
+        .filter((booking): booking is Booking => {
+          if (!booking) return false;
+
+          // Check for overlap: booking starts before requested ends AND booking ends after requested starts
+          const bookingStart = new Date(booking.startDate).getTime();
+          const bookingEnd = new Date(booking.endDate).getTime();
+          const hasOverlap =
+            bookingStart < requestedEnd && bookingEnd > requestedStart;
+
+          return hasOverlap;
+        });
+
+      return {
+        isAvailable: conflictingBookings.length === 0,
+        conflictingBookings,
+      };
+    } catch (error) {
+      console.error("Error checking availability:", error);
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to check availability",
+        0
+      );
+    }
+  },
+
+  /**
+   * Create a new booking in Firestore
+   */
+  createBooking: async (data: CreateBookingInput): Promise<Booking> => {
+    try {
+      const bookingsCollection = collection(db, "bookings");
+      const startDate = new Date(data.startDate);
+      const endDate = new Date(data.endDate);
+
+      // Validate dates
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        throw new Error("Invalid date provided");
+      }
+
+      if (endDate <= startDate) {
+        throw new Error("End date must be after start date");
+      }
+
+      const bookingData = {
+        userId: data.userId,
+        startDate: Timestamp.fromDate(startDate),
+        endDate: Timestamp.fromDate(endDate),
+        createdAt: Timestamp.now(),
+      };
+
+      const docRef = await addDoc(bookingsCollection, bookingData);
+
+      return {
+        id: docRef.id,
+        userId: data.userId,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to create booking",
         0
       );
     }

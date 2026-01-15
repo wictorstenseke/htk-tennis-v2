@@ -58,3 +58,18 @@ export interface User {
   displayName?: string;
   createdAt?: string;
 }
+
+// Booking entity (from Firestore)
+export interface Booking {
+  id: string;
+  userId: string;
+  startDate: string; // ISO datetime
+  endDate: string; // ISO datetime
+  createdAt: string; // ISO datetime
+}
+
+export interface CreateBookingInput {
+  userId: string;
+  startDate: string; // ISO datetime string
+  endDate: string; // ISO datetime string
+}
