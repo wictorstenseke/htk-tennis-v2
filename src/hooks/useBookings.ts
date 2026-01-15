@@ -84,6 +84,11 @@ export const useCreateBookingMutation = () => {
         });
       });
 
+      // Also invalidate availability queries to reflect the new booking
+      queryClient.invalidateQueries({
+        queryKey: [...bookingKeys.all, "availability"],
+      });
+
       // Return a context object with the snapshotted value
       return { previousBookings };
     },

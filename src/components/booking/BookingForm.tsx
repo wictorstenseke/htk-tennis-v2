@@ -119,7 +119,7 @@ export const BookingForm = () => {
     setAvailabilityChecked(false);
   };
 
-  const handleCreateBooking = async () => {
+  const handleCreateBooking = () => {
     if (!user) {
       toast.error("Du måste vara inloggad för att boka match");
       return;
@@ -135,21 +135,30 @@ export const BookingForm = () => {
       return;
     }
 
-    try {
-      await createBookingMutation.mutateAsync({
+    // Close dialog immediately for instant feedback (optimistic update will show booking in list)
+    setOpen(false);
+    setAvailabilityChecked(false);
+
+    // Use mutate instead of mutateAsync for immediate optimistic update
+    createBookingMutation.mutate(
+      {
         userId: user.uid,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
-      });
-
-      toast.success("Match bokad");
-      setAvailabilityChecked(false);
-      setOpen(false);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Kunde inte boka match"
-      );
-    }
+      },
+      {
+        onSuccess: () => {
+          // Show success toast only after server confirms
+          toast.success("Match bokad");
+        },
+        onError: (error) => {
+          // Show error toast if mutation fails (optimistic update will be rolled back)
+          toast.error(
+            error instanceof Error ? error.message : "Kunde inte boka match"
+          );
+        },
+      }
+    );
   };
 
   return (
@@ -262,7 +271,6 @@ export const BookingForm = () => {
             disabled={
               !availabilityChecked ||
               !availabilityData?.isAvailable ||
-              createBookingMutation.isPending ||
               isCheckingAvailability
             }
             className={cn(
@@ -272,14 +280,7 @@ export const BookingForm = () => {
                 "cursor-not-allowed opacity-50"
             )}
           >
-            {createBookingMutation.isPending ? (
-              <>
-                <Spinner className="h-4 w-4" />
-                Bokar match...
-              </>
-            ) : (
-              "Boka match"
-            )}
+            Boka match
           </Button>
         </div>
       </DialogContent>
