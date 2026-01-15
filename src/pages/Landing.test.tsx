@@ -45,19 +45,20 @@ describe("Landing", () => {
       mockUseAuth.mockReturnValue({ user: null, loading: false });
     });
 
-    it("renders the login form", () => {
+    it("renders the hero section", () => {
       renderWithQueryClient(<Landing />);
 
       expect(
-        screen.getByRole("heading", { name: /welcome back/i })
+        screen.getByRole("heading", { name: /welcome to htk tennis/i })
       ).toBeInTheDocument();
     });
 
-    it("renders email and password fields", () => {
+    it("renders hero description", () => {
       renderWithQueryClient(<Landing />);
 
-      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/manage your tennis club with ease/i)
+      ).toBeInTheDocument();
     });
 
     it("renders sign in button", () => {
@@ -66,6 +67,13 @@ describe("Landing", () => {
       expect(
         screen.getByRole("button", { name: /sign in/i })
       ).toBeInTheDocument();
+    });
+
+    it("does not render login form fields directly", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
     });
   });
 
