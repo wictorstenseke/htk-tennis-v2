@@ -1,0 +1,348 @@
+# Getting started
+
+iOS-like wheel picker for React with smooth inertia scrolling and infinite loop support.
+
+## Installation
+
+<CodeTabs className="gap-0 mt-6">
+  <TabsList>
+    <TabsTrigger className="px-2.5" value="shadcn/ui">
+      <ShadcnIcon />
+
+      {`shadcn/ui`}
+    </TabsTrigger>
+
+    <TabsTrigger className="px-2.5" value="primitives">
+      <ReactWheelPickerIcon />
+
+      {`Primitives`}
+    </TabsTrigger>
+
+  </TabsList>
+
+  <TabsContent value="shadcn/ui">
+    ```bash
+    npx shadcn add @ncdai/wheel-picker
+    ```
+
+    ### Configure the shadcn MCP server (optional)
+
+    Enable AI assistants to understand your component registry:
+
+    ```bash
+    npx shadcn mcp init
+    ```
+
+    Learn more about [shadcn MCP server](https://ui.shadcn.com/docs/mcp).
+
+    **Example Prompts:**
+
+    * Create a wheel picker demo from the ncdai registry
+    * Create a wheel picker form demo from the ncdai registry
+
+  </TabsContent>
+
+  <TabsContent value="primitives" className="[&>figure]:mb-0">
+    ```bash
+    npm install @ncdai/react-wheel-picker
+    ```
+  </TabsContent>
+</CodeTabs>
+
+## Anatomy
+
+```tsx
+<WheelPickerWrapper>
+  <WheelPicker />
+  <WheelPicker />
+  <WheelPicker />
+</WheelPickerWrapper>
+```
+
+The wheel picker consists of two main components:
+
+### WheelPickerWrapper
+
+The wrapper component that contains one or more wheel pickers. It provides the container structure and handles the layout of multiple wheels.
+
+### WheelPicker
+
+The core component that renders a single wheel of options. Each wheel picker consists of:
+
+- A container with a 3D perspective
+- A scrollable list of options
+- A highlight area that indicates the selected option
+- A mask that creates the fade effect at the top and bottom
+
+## Usage
+
+<CodeTabs className="gap-0 mt-6">
+  <TabsList>
+    <TabsTrigger className="px-2.5" value="shadcn/ui">
+      <ShadcnIcon />
+
+      {`shadcn/ui`}
+    </TabsTrigger>
+
+    <TabsTrigger className="px-2.5" value="primitives">
+      <ReactWheelPickerIcon />
+
+      {`Primitives`}
+    </TabsTrigger>
+
+  </TabsList>
+
+  <TabsContent value="shadcn/ui" className="[&>figure]:mb-0">
+    ```tsx
+    import {
+      WheelPicker,
+      WheelPickerWrapper,
+      type WheelPickerOption,
+    } from "@/components/wheel-picker";
+    ```
+
+    ```tsx
+    const options: WheelPickerOption[] = [
+      {
+        label: "Next.js",
+        value: "nextjs",
+      },
+      {
+        label: "Vite",
+        value: "vite",
+      },
+      // ...
+    ];
+
+    export function WheelPickerDemo() {
+      const [value, setValue] = useState("nextjs");
+
+      return (
+        <WheelPickerWrapper>
+          <WheelPicker options={options} value={value} onValueChange={setValue} />
+        </WheelPickerWrapper>
+      );
+    }
+    ```
+
+  </TabsContent>
+
+  <TabsContent value="primitives" className="[&>figure]:mb-0">
+    <Steps>
+      <Step>Import the default styles</Step>
+
+      Add the core CSS to your app's entry point (e.g., `src/app/layout.tsx` `src/main.tsx` or `src/index.tsx`):
+
+      ```tsx title="src/app/layout.tsx"
+      import "@ncdai/react-wheel-picker/style.css";
+      ```
+
+      This CSS includes only basic layout. Use `classNames` to customize visuals (see below).
+
+      <Step>Use the component</Step>
+
+      <Tabs className="gap-0 mt-4" defaultValue="tailwindcss">
+        <TabsList>
+          <TabsTrigger className="px-2.5" value="tailwindcss">
+            <TailwindCSSIcon />
+
+            {`Tailwind CSS`}
+          </TabsTrigger>
+
+          <TabsTrigger className="px-2.5" value="css">
+            <CSSIcon className="size-3" />
+
+            {`CSS`}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="tailwindcss" className="[&>figure]:mb-0">
+          ```tsx
+          import {
+            WheelPicker,
+            WheelPickerWrapper,
+            type WheelPickerOption,
+          } from "@ncdai/react-wheel-picker";
+          ```
+
+          ```tsx
+          const options: WheelPickerOption[] = [
+            {
+              label: "Next.js",
+              value: "nextjs",
+            },
+            {
+              label: "Vite",
+              value: "vite",
+            },
+            // ...
+          ];
+
+          export function WheelPickerDemo() {
+            const [value, setValue] = useState("nextjs");
+
+            return (
+              <WheelPickerWrapper className="w-56 rounded-md border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+                <WheelPicker
+                  options={options}
+                  value={value}
+                  onValueChange={setValue}
+                  classNames={{
+                    optionItem: "text-zinc-400 dark:text-zinc-500",
+                    highlightWrapper:
+                      "bg-zinc-100 text-zinc-950 dark:bg-zinc-900 dark:text-zinc-50 data-rwp-focused:ring-2 data-rwp-focused:ring-zinc-300 data-rwp-focused:ring-inset dark:data-rwp-focused:ring-zinc-600",
+                  }}
+                />
+              </WheelPickerWrapper>
+            );
+          }
+          ```
+        </TabsContent>
+
+        <TabsContent value="css" className="[&>figure]:mb-0">
+          ```css title="styles/theme.css"
+          [data-rwp-wrapper] {
+            width: 14rem;
+            border-radius: 0.375rem;
+            border: 1px solid #e4e4e7;
+            background-color: #ffffff;
+          }
+
+          [data-rwp-option] {
+            color: #a1a1aa;
+          }
+
+          [data-rwp-highlight-wrapper] {
+            background-color: #f4f4f5;
+            color: #09090b;
+          }
+
+          [data-rwp-highlight-wrapper][data-rwp-focused] {
+            box-shadow: inset 0 0 0 2px #d4d4d8;
+          }
+          ```
+
+          ```tsx
+          import {
+            WheelPicker,
+            WheelPickerWrapper,
+            type WheelPickerOption,
+          } from "@ncdai/react-wheel-picker";
+          ```
+
+          ```tsx
+          const options: WheelPickerOption[] = [
+            {
+              label: "Next.js",
+              value: "nextjs",
+            },
+            {
+              label: "Vite",
+              value: "vite",
+            },
+            // ...
+          ];
+
+          export function WheelPickerDemo() {
+            const [value, setValue] = useState("nextjs");
+
+            return (
+              <WheelPickerWrapper>
+                <WheelPicker options={options} value={value} onValueChange={setValue} />
+              </WheelPickerWrapper>
+            );
+          }
+          ```
+        </TabsContent>
+      </Tabs>
+    </Steps>
+
+  </TabsContent>
+</CodeTabs>
+
+## Examples
+
+You can find usage examples in the **Examples** section at: [https://chanhdai.com/components/react-wheel-picker#examples](https://chanhdai.com/components/react-wheel-picker#examples)
+
+## API Reference
+
+### WheelPickerWrapper
+
+Props for the `WheelPickerWrapper` component:
+
+| Prop        | Type        | Default    | Description                |
+| ----------- | ----------- | ---------- | -------------------------- |
+| `className` | `string`    | -          | CSS class name for wrapper |
+| `children`  | `ReactNode` | (required) | `WheelPicker` components   |
+
+### WheelPicker
+
+Props for the `WheelPicker` component:
+
+| Prop                | Type                     | Default    | Description                                                                                        |
+| ------------------- | ------------------------ | ---------- | -------------------------------------------------------------------------------------------------- |
+| `options`           | `WheelPickerOption<T>[]` | (required) | Array of options to display in the wheel                                                           |
+| `value`             | `T`                      | -          | Current value of the picker (controlled mode). Type matches the option values (string or number)   |
+| `defaultValue`      | `T`                      | -          | Default value of the picker (uncontrolled mode). Type matches the option values (string or number) |
+| `onValueChange`     | `(value: T) => void`     | -          | Callback fired when the selected value changes. Receives the selected option's value               |
+| `infinite`          | `boolean`                | `false`    | Enable infinite scrolling                                                                          |
+| `visibleCount`      | `number`                 | `20`       | Number of options visible on the wheel (must be multiple of 4)                                     |
+| `dragSensitivity`   | `number`                 | `3`        | Sensitivity of the drag interaction (higher = more sensitive)                                      |
+| `scrollSensitivity` | `number`                 | `5`        | Sensitivity of the scroll interaction (higher = more sensitive)                                    |
+| `optionItemHeight`  | `number`                 | `30`       | Height (in pixels) of each item in the picker list                                                 |
+| `classNames`        | `WheelPickerClassNames`  | -          | Custom class names for styling                                                                     |
+
+### Types
+
+```tsx
+type WheelPickerValue = string | number;
+```
+
+```tsx
+type WheelPickerOption<T extends WheelPickerValue = string> = {
+  /** Value that will be returned when this option is selected */
+  value: T;
+  /** The content displayed for this option */
+  label: ReactNode;
+  /** Optional text for type-ahead search (useful when label is a ReactNode). Defaults to label if string, otherwise value. */
+  textValue?: string;
+};
+```
+
+```tsx
+type WheelPickerClassNames = {
+  /** Class name for individual option items */
+  optionItem?: string;
+  /** Class name for the wrapper of the highlighted area */
+  highlightWrapper?: string;
+  /** Class name for the highlighted item */
+  highlightItem?: string;
+};
+```
+
+### Data Attributes
+
+The following data attributes are available for CSS styling:
+
+| Attribute                      | Element           | Description                                                          |
+| ------------------------------ | ----------------- | -------------------------------------------------------------------- |
+| `[data-rwp-wrapper]`           | Wrapper           | Applied to `WheelPickerWrapper`                                      |
+| `[data-rwp]`                   | Picker            | Applied to `WheelPicker` root element                                |
+| `[data-rwp-options]`           | Options container | Applied to the options list container                                |
+| `[data-rwp-option]`            | Option item       | Applied to each option item in the wheel                             |
+| `[data-rwp-highlight-wrapper]` | Highlight wrapper | Applied to the highlight area wrapper                                |
+| `[data-rwp-highlight-list]`    | Highlight list    | Applied to the highlight list container                              |
+| `[data-rwp-highlight-item]`    | Highlight item    | Applied to the highlighted option item                               |
+| `[data-rwp-focused]`           | Highlight wrapper | Present on `[data-rwp-highlight-wrapper]` when the picker is focused |
+
+### Data Slots
+
+The following `data-slot` attributes are available for targeting specific elements:
+
+| Slot                | Element           | Description                   |
+| ------------------- | ----------------- | ----------------------------- |
+| `option-item`       | Option item       | Each option item in the wheel |
+| `highlight-wrapper` | Highlight wrapper | The highlight area wrapper    |
+| `highlight-item`    | Highlight item    | The highlighted option item   |
+
+Last updated on January 3, 2026
