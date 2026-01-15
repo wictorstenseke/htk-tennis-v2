@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 
-import { Link } from "@tanstack/react-router";
 import { LogOutIcon, UserIcon } from "lucide-react";
+
+import { Link } from "@tanstack/react-router";
 
 import { AuthDialog } from "@/components/auth/AuthDialog";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -51,22 +52,6 @@ export function AppShell({ children }: AppShellProps) {
                 inactiveProps={{ className: "text-foreground/60" }}
               >
                 Home
-              </Link>
-              <Link
-                to="/example"
-                className="transition-colors hover:text-foreground/80"
-                activeProps={{ className: "text-foreground" }}
-                inactiveProps={{ className: "text-foreground/60" }}
-              >
-                Example
-              </Link>
-              <Link
-                to="/query-demo"
-                className="transition-colors hover:text-foreground/80"
-                activeProps={{ className: "text-foreground" }}
-                inactiveProps={{ className: "text-foreground/60" }}
-              >
-                Query Demo
               </Link>
             </nav>
           </div>

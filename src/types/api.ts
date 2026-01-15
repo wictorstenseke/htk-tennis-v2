@@ -50,3 +50,11 @@ export interface PaginatedResponse<T> {
     total: number;
   };
 }
+
+// User entity (from Firestore)
+export interface User {
+  uid: string;
+  email: string;
+  displayName?: string;
+  createdAt: string;
+}
