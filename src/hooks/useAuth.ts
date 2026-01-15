@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 
 import { auth } from "@/lib/firebase";
+
 import type { User } from "@/lib/auth";
 
 interface UseAuthReturn {

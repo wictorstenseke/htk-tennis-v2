@@ -1,65 +1,116 @@
-import React from "react";
-
 import { screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { renderWithQueryClient } from "@/test/utils";
 
 import { Landing } from "./Landing";
 
-// Mock TanStack Router Link component
+// Mock TanStack Router
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to, ...props }: { children: React.ReactNode; to: string }) => (
-    <a href={to} {...props}>{children}</a>
+  useNavigate: () => vi.fn(),
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
   ),
 }));
 
+// Mock useAuth hook
+const mockUseAuth = vi.fn();
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: () => mockUseAuth(),
+}));
+
+// Mock auth functions
+vi.mock("@/lib/auth", () => ({
+  signIn: vi.fn(),
+  signUp: vi.fn(),
+  signOut: vi.fn(),
+}));
+
+// Mock Firebase
+vi.mock("@/lib/firebase", () => ({
+  auth: {
+    onAuthStateChanged: vi.fn(),
+    currentUser: null,
+  },
+  db: {},
+}));
+
 describe("Landing", () => {
-  it("renders the hero section with title and description", () => {
-    renderWithQueryClient(<Landing />);
-
-    expect(
-      screen.getByRole("heading", { name: /htk tennis v2/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/hogelids tennis klubb/i)
-    ).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it("renders action buttons", () => {
-    renderWithQueryClient(<Landing />);
+  describe("when user is not authenticated", () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({ user: null, loading: false });
+    });
 
-    expect(screen.getByRole("link", { name: /view examples/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /view on github/i })).toBeInTheDocument();
-  });
+    it("renders the login form", () => {
+      renderWithQueryClient(<Landing />);
 
-  it("renders exactly 6 feature cards", () => {
-    renderWithQueryClient(<Landing />);
+      expect(
+        screen.getByRole("heading", { name: /welcome back/i })
+      ).toBeInTheDocument();
+    });
 
-    // Verify all 6 feature card titles are present
-    const expectedCardTitles = [
-      "Firebase Authentication",
-      "Cloud Firestore",
-      "Modern UI",
-      "Type Safe",
-      "Fast & Reliable",
-      "Mobile Responsive",
-    ];
+    it("renders email and password fields", () => {
+      renderWithQueryClient(<Landing />);
 
-    expectedCardTitles.forEach((title) => {
-      expect(screen.getByRole("heading", { name: new RegExp(title, "i") })).toBeInTheDocument();
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    });
+
+    it("renders sign in button", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(
+        screen.getByRole("button", { name: /sign in/i })
+      ).toBeInTheDocument();
     });
   });
 
-  it("renders all expected feature cards with correct titles", () => {
-    renderWithQueryClient(<Landing />);
+  describe("when user is authenticated", () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: { email: "test@example.com", uid: "123" },
+        loading: false,
+      });
+    });
 
-    // Check for all 6 feature card titles
-    expect(screen.getByRole("heading", { name: /firebase authentication/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /cloud firestore/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /modern ui/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /type safe/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /fast & reliable/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /mobile responsive/i })).toBeInTheDocument();
+    it("renders welcome message with user email", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(
+        screen.getByRole("heading", { name: /welcome back!/i })
+      ).toBeInTheDocument();
+      expect(screen.getByText(/test@example.com/i)).toBeInTheDocument();
+    });
+
+    it("renders go to app button", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(
+        screen.getByRole("link", { name: /go to app/i })
+      ).toBeInTheDocument();
+    });
+
+    it("does not render login form", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("when loading", () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({ user: null, loading: true });
+    });
+
+    it("renders loading state", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    });
   });
 });

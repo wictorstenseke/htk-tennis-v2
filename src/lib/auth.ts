@@ -36,3 +36,13 @@ export const signUp = async (
 export const signOut = async (): Promise<void> => {
   await firebaseSignOut(auth);
 };
+
+/**
+ * Wait for Firebase Auth to initialize and return current user
+ * This is a utility function for use in route guards
+ */
+export const waitForAuthReady = async (): Promise<User | null> => {
+  // Wait for auth to initialize using authStateReady
+  await auth.authStateReady();
+  return auth.currentUser;
+};

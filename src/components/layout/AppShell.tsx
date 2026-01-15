@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 
-import { Link } from "@tanstack/react-router";
 import { LogOutIcon, UserIcon } from "lucide-react";
+
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { AuthDialog } from "@/components/auth/AuthDialog";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -25,12 +26,26 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const { user, loading } = useAuth();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
       await signOut();
+      navigate({ to: "/" });
     } catch (error) {
       console.error("Error signing out:", error);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setAuthDialogOpen(false);
+    navigate({ to: "/app" });
+  };
+
+  const handleAppClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      setAuthDialogOpen(true);
     }
   };
 
@@ -53,20 +68,13 @@ export function AppShell({ children }: AppShellProps) {
                 Home
               </Link>
               <Link
-                to="/example"
+                to="/app"
+                onClick={handleAppClick}
                 className="transition-colors hover:text-foreground/80"
                 activeProps={{ className: "text-foreground" }}
                 inactiveProps={{ className: "text-foreground/60" }}
               >
-                Example
-              </Link>
-              <Link
-                to="/query-demo"
-                className="transition-colors hover:text-foreground/80"
-                activeProps={{ className: "text-foreground" }}
-                inactiveProps={{ className: "text-foreground/60" }}
-              >
-                Query Demo
+                App
               </Link>
             </nav>
           </div>
@@ -106,7 +114,11 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </header>
 
-      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
+      <AuthDialog
+        open={authDialogOpen}
+        onOpenChange={setAuthDialogOpen}
+        onSuccess={handleAuthSuccess}
+      />
 
       {/* Main Content */}
       <main className="flex-1">

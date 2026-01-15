@@ -1,12 +1,13 @@
 # HTK Tennis V2
 
-A modern web application for Hogelids Tennis Klubb (HTK), built with React, TypeScript, and Firebase.
+A modern web application for Hogelids Tennis Klubb (HTK), built with React, TypeScript, and Firebase authentication and user management.
 
 ## 🚀 Features
 
 - ⚡️ **Vite (Rolldown)** - Lightning fast build tool powered by Rust-based Rolldown bundler
 - ⚛️ **React 19** - Latest React with TypeScript
 - 🔥 **Firebase** - Authentication and Firestore database
+- 🔐 **Protected Routes** - Route guards with Firebase Auth integration
 - 🎨 **Tailwind CSS v4** - Utility-first CSS framework
 - 🧩 **shadcn/ui** - Beautiful, accessible components built on Radix UI primitives
 - 🛣️ **TanStack Router** - Type-safe file-based routing with auto-generated route tree
@@ -17,61 +18,102 @@ A modern web application for Hogelids Tennis Klubb (HTK), built with React, Type
 - 🤖 **GitHub Actions** - CI/CD pipeline
 - 📱 **Responsive** - Mobile-first design
 
+### About Rolldown-Vite
+
+This boilerplate uses [rolldown-vite](https://vite.dev/guide/migration#rolldown-migration) (aliased as `vite`), Vite's experimental Rust-based bundler that's 5-10x faster than the JavaScript bundler. It's a drop-in replacement providing identical API and significantly improved build performance.
+
 ## 📦 Project Structure
 
 ```
 src/
 ├── components/
-│   ├── auth/                  # Authentication components
-│   │   ├── AuthDialog.tsx     # Login dialog
-│   │   └── LoginForm.tsx      # Login form
+│   ├── auth/
+│   │   ├── AuthDialog.tsx      # Auth dialog (sign in/sign up)
+│   │   └── LoginForm.tsx       # Login/signup form component
 │   ├── layout/
-│   │   └── AppShell.tsx       # Main layout wrapper
-│   └── ui/                    # shadcn/ui components
-├── pages/                     # Page components
-├── routes/                    # TanStack Router routes
-│   └── __root.tsx             # Root layout
-├── hooks/                     # Custom React hooks
+│   │   └── AppShell.tsx        # Main layout wrapper with auth state
+│   └── ui/                      # shadcn/ui components
+├── pages/
+│   ├── Landing.tsx              # Login page (/) - unauthenticated users
+│   └── App.tsx                  # Users table (/app) - authenticated users
+├── routes/                      # TanStack Router routes
+│   ├── __root.tsx               # Root layout
+│   ├── index.tsx                # / route (redirects to /app if authenticated)
+│   └── app.tsx                  # /app route (protected, requires auth)
+├── hooks/
+│   ├── useAuth.ts               # Firebase auth hook
+│   ├── usePosts.ts              # Example query hooks
+│   └── useUsers.ts              # Users query hook (Firestore)
 ├── lib/
-│   ├── firebase.ts            # Firebase initialization
-│   ├── auth.ts                # Authentication utilities
-│   ├── queryClient.ts         # TanStack Query configuration
-│   └── utils.ts               # Utility functions
-├── types/                     # TypeScript type definitions
-├── router.tsx                 # Router configuration
-├── main.tsx                   # App entry point
-└── index.css                  # Global styles
+│   ├── api.ts                   # API client with Firestore integration
+│   ├── auth.ts                  # Firebase auth functions
+│   ├── firebase.ts              # Firebase configuration
+│   ├── queryClient.ts           # TanStack Query configuration
+│   └── utils.ts                 # Utility functions
+├── types/
+│   └── api.ts                   # API type definitions (Post, User)
+├── router.tsx                   # Router configuration
+├── main.tsx                     # App entry point
+└── index.css                    # Global styles
+```
+
+## 🔐 Authentication & Authorization
+
+This app uses Firebase Authentication with the following flow:
+
+1. **Unauthenticated Users**: Redirected to `/` (landing page with login form)
+2. **Authenticated Users**: Redirected to `/app` (protected users table)
+
+### Route Guards
+
+Routes use `beforeLoad` guards to check authentication:
+
+- `/` - Redirects authenticated users to `/app`
+- `/app` - Redirects unauthenticated users to `/`
+
+### Auth Functions
+
+```tsx
+import { signIn, signUp, signOut } from "@/lib/auth";
+
+// Sign in with email/password
+await signIn("user@example.com", "password");
+
+// Sign up new user
+await signUp("user@example.com", "password");
+
+// Sign out
+await signOut();
+```
+
+### Using Auth State
+
+```tsx
+import { useAuth } from "@/hooks/useAuth";
+
+const MyComponent = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div>Loading...</div>;
+  if (!user) return <div>Please sign in</div>;
+
+  return <div>Welcome, {user.email}!</div>;
+};
 ```
 
 ## 🛠️ Getting Started
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
-- npm or yarn
-- Firebase project (see Firebase Setup below)
-
-### Install dependencies
-
-```bash
-npm install
-```
-
-### Firebase Setup
-
-1. Create a new Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Enable Authentication (Email/Password or other providers)
-3. Create a Firestore database
-4. Copy your Firebase configuration
-5. Create a `.env` file based on `.env.example`:
+You need Firebase project credentials. Create a `.env` file in the root directory:
 
 ```bash
 cp .env.example .env
 ```
 
-6. Fill in your Firebase credentials in the `.env` file:
+Then fill in your Firebase configuration values:
 
-```
+```env
 VITE_FIREBASE_API_KEY=your_api_key_here
 VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your_project_id
@@ -81,24 +123,17 @@ VITE_FIREBASE_APP_ID=your_app_id
 VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
+### Install dependencies
+
+```bash
+npm install
+```
+
 ### Start development server
 
 ```bash
 npm run dev
 ```
-
-### Firebase Emulators (Optional)
-
-For local development without using production Firebase:
-
-```bash
-firebase emulators:start
-```
-
-This starts:
-- Authentication emulator on port 9099
-- Firestore emulator on port 8080
-- Firebase UI on port 4000
 
 ### Build for production
 
@@ -197,18 +232,14 @@ The global QueryClient is configured in `src/lib/queryClient.ts`:
 Create custom hooks in `src/hooks/`:
 
 ```tsx
-// src/hooks/useMatches.ts
+// src/hooks/usePosts.ts
 import { useQuery } from "@tanstack/react-query";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { postsApi } from "@/lib/api";
 
-export const useMatchesQuery = () => {
+export const usePostsQuery = (params?: PaginationParams) => {
   return useQuery({
-    queryKey: ["matches"],
-    queryFn: async () => {
-      const snapshot = await getDocs(collection(db, "matches"));
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    },
+    queryKey: ["posts", params],
+    queryFn: () => postsApi.getPosts(params),
   });
 };
 ```
@@ -216,15 +247,34 @@ export const useMatchesQuery = () => {
 ### Using Queries in Components
 
 ```tsx
-import { useMatchesQuery } from "@/hooks/useMatches";
+import { usePostsQuery } from "@/hooks/usePosts";
 
 const MyComponent = () => {
-  const { data, isLoading, isError, error } = useMatchesQuery();
+  const { data, isLoading, isError, error } = usePostsQuery();
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error: {error.message}</div>;
 
   return <div>{/* Render data */}</div>;
+};
+```
+
+### Mutations with Optimistic Updates
+
+```tsx
+import { useUpdatePostMutation } from "@/hooks/usePosts";
+
+const MyComponent = () => {
+  const updatePost = useUpdatePostMutation();
+
+  const handleUpdate = () => {
+    updatePost.mutate({
+      id: 1,
+      data: { title: "Updated Title" },
+    });
+  };
+
+  return <button onClick={handleUpdate}>Update</button>;
 };
 ```
 
@@ -236,6 +286,22 @@ React Query Devtools are included in development mode. Click the floating icon t
 - View query states
 - Manually trigger refetches
 - Debug query configurations
+
+## 🗄️ Firestore Data Structure
+
+### Users Collection
+
+The app expects a `users` collection in Firestore with documents containing:
+
+```typescript
+{
+  email: string;          // User email address
+  displayName?: string;   // Optional display name
+  createdAt?: string;     // ISO date string
+}
+```
+
+Documents are identified by the Firebase Auth UID as the document ID.
 
 ## 🎯 Layout System
 
@@ -318,20 +384,6 @@ Settings are pre-configured for:
 - Auto-fix ESLint issues
 - Consistent line endings
 
-## 📋 Cursor Rules
-
-This project uses modular cursor rules stored in `.cursor/rules/` to maintain consistent coding standards:
-
-- `global.mdc` - Project-wide conventions and TypeScript standards
-- `react-components.mdc` - React component patterns and JSX conventions
-- `firebase.mdc` - Firebase and Firestore patterns
-- `tanstack-query.mdc` - TanStack Query patterns for data fetching
-- `tanstack-router.mdc` - TanStack Router file-based routing conventions
-- `testing.mdc` - Vitest testing conventions
-- `ui-components.mdc` - Shadcn UI component patterns (Radix UI/Base UI)
-
-These rules are authoritative and should be read before making changes to the codebase.
-
 ## 🚀 CI/CD
 
 GitHub Actions workflow is included (`.github/workflows/ci.yml`):
@@ -353,45 +405,10 @@ GitHub Actions workflow is included (`.github/workflows/ci.yml`):
 - [Tailwind CSS](https://tailwindcss.com)
 - [Vitest](https://vitest.dev)
 
-## 🔥 Firebase Deployment
-
-### Setup
-
-```bash
-npm install -g firebase-tools
-firebase login
-firebase init
-```
-
-### Deploy
-
-```bash
-npm run build
-firebase deploy
-```
-
-### Firestore Security Rules
-
-The project includes Firestore security rules in `firestore.rules`. Currently set to DEV MODE (open access):
-
-⚠️ **WARNING**: Before deploying to production, update the security rules to restrict access appropriately:
-
-```javascript
-// Example production rules
-match /databases/{database}/documents {
-  match /{document=**} {
-    allow read: if isAuthenticated();
-    allow write: if isAdminOrSuperUser();
-  }
-}
-```
-
-Helper functions for role-based access control are already defined in the rules file.
-
 ## 📄 License
 
 MIT
 
-## 🏸 About HTK
+## 🤝 Contributing
 
-Hogelids Tennis Klubb is a tennis club providing facilities and activities for tennis enthusiasts.
+Feel free to customize this boilerplate for your needs!

@@ -1,9 +1,14 @@
+import { collection, getDocs } from "firebase/firestore";
+
+import { db } from "./firebase";
+
 import type {
   ApiError,
   CreatePostInput,
   PaginationParams,
   Post,
   UpdatePostInput,
+  User,
 } from "@/types/api";
 
 /**
@@ -130,5 +135,36 @@ export const postsApi = {
     return fetchApi<void>(`/posts/${id}`, {
       method: "DELETE",
     });
+  },
+};
+
+/**
+ * API Client - Users endpoints
+ */
+export const usersApi = {
+  /**
+   * Get all users from Firestore
+   */
+  getUsers: async (): Promise<User[]> => {
+    try {
+      const usersCollection = collection(db, "users");
+      const snapshot = await getDocs(usersCollection);
+      
+      return snapshot.docs.map((doc) => {
+        const data = doc.data();
+        // Validate and construct User object with proper type checking
+        return {
+          uid: doc.id,
+          email: typeof data.email === "string" ? data.email : "",
+          displayName: typeof data.displayName === "string" ? data.displayName : undefined,
+          createdAt: typeof data.createdAt === "string" ? data.createdAt : undefined,
+        };
+      });
+    } catch (error) {
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to fetch users",
+        0
+      );
+    }
   },
 };
