@@ -123,19 +123,19 @@ export const DateTimeWheelPicker = ({
               value={selectedDate}
               onValueChange={setSelectedDate}
               options={dateOptions}
-              visibleCount={12}
+              visibleCount={20}
             />
             <WheelPicker
               value={selectedHour}
               onValueChange={setSelectedHour}
               options={hourOptions}
-              visibleCount={12}
+              visibleCount={20}
             />
             <WheelPicker
               value={selectedMinute.toString()}
               onValueChange={(val: string) => setSelectedMinute(parseInt(val))}
               options={minuteOptions}
-              visibleCount={12}
+              visibleCount={20}
             />
           </WheelPickerWrapper>
         </div>
@@ -195,14 +195,14 @@ export const InlineDateTimeWheelPicker = ({
           {title}
         </h3>
       )}
-      <div className="flex justify-center">
+      <div className="flex justify-center" data-vaul-no-drag>
         <WheelPickerWrapper className="w-auto">
           <div className="w-6/12">
             <WheelPicker
               value={selectedDate}
               onValueChange={handleDateChange}
               options={dateOptions}
-              visibleCount={12}
+              visibleCount={20}
             />
           </div>
           <div className="w-3/12">
@@ -210,7 +210,7 @@ export const InlineDateTimeWheelPicker = ({
               value={selectedHour}
               onValueChange={handleHourChange}
               options={hourOptions}
-              visibleCount={12}
+              visibleCount={20}
             />
           </div>
           <div className="w-3/12">
@@ -218,7 +218,7 @@ export const InlineDateTimeWheelPicker = ({
               value={selectedMinute.toString()}
               onValueChange={handleMinuteChange}
               options={minuteOptions}
-              visibleCount={12}
+              visibleCount={20}
             />
           </div>
         </WheelPickerWrapper>
@@ -271,14 +271,14 @@ export const InlineTimeWheelPicker = ({
           {title}
         </h3>
       )}
-      <div className="flex justify-center">
+      <div className="flex justify-center" data-vaul-no-drag>
         <WheelPickerWrapper className="w-auto">
           <div className="w-6/12">
             <WheelPicker
               value={selectedHour}
               onValueChange={handleHourChange}
               options={hourOptions}
-              visibleCount={12}
+              visibleCount={20}
             />
           </div>
           <div className="w-6/12">
@@ -286,7 +286,7 @@ export const InlineTimeWheelPicker = ({
               value={selectedMinute.toString()}
               onValueChange={handleMinuteChange}
               options={minuteOptions}
-              visibleCount={12}
+              visibleCount={20}
             />
           </div>
         </WheelPickerWrapper>

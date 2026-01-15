@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import { XIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,12 +12,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useCheckAvailability,
   useCreateBookingMutation,
 } from "@/hooks/useBookings";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useUsersQuery } from "@/hooks/useUsers";
 import { cn } from "@/lib/utils";
 
 import {
@@ -49,8 +60,16 @@ const formatDateTime = (date: Date): string => {
   return `${dayName} ${day} ${monthName} ${hours}.${minutes}`;
 };
 
+const formatTime = (date: Date): string => {
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  return `${hours}.${minutes}`;
+};
+
 export const BookingForm = () => {
   const { user } = useAuth();
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const { data: users } = useUsersQuery();
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState(() => {
     const now = new Date();
@@ -81,6 +100,16 @@ export const BookingForm = () => {
   } = useCheckAvailability(startDate, endDate);
 
   const createBookingMutation = useCreateBookingMutation();
+
+  // Create a map of userId to displayName
+  const userMap = useMemo(() => {
+    if (!users) return new Map<string, string>();
+    const map = new Map<string, string>();
+    users.forEach((user) => {
+      map.set(user.uid, user.displayName || user.email);
+    });
+    return map;
+  }, [users]);
 
   useEffect(() => {
     const checkAvailabilityAutomatically = async () => {
@@ -161,6 +190,141 @@ export const BookingForm = () => {
     );
   };
 
+  const bookingContent = (
+    <div className="space-y-4 px-4 pb-8">
+      <div>
+        <div
+          className="flex cursor-pointer items-center justify-between pb-3 transition-colors hover:text-primary"
+          onClick={() =>
+            setVisiblePicker(visiblePicker === "start" ? null : "start")
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setVisiblePicker(visiblePicker === "start" ? null : "start");
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Select start date and time"
+        >
+          <span className="text-sm">Starttid</span>
+          <span className="text-sm">{formatDateTime(startDate)}</span>
+        </div>
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-300 ease-in-out",
+            visiblePicker === "start"
+              ? "max-h-[400px] opacity-100"
+              : "max-h-0 opacity-0"
+          )}
+        >
+          {visiblePicker === "start" && (
+            <InlineDateTimeWheelPicker
+              value={startDate}
+              onChange={handleStartDateChange}
+            />
+          )}
+        </div>
+        <div className="border-b"></div>
+      </div>
+
+      <div>
+        <div
+          className="flex cursor-pointer items-center justify-between pb-3 transition-colors hover:text-primary"
+          onClick={() =>
+            setVisiblePicker(visiblePicker === "end" ? null : "end")
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setVisiblePicker(visiblePicker === "end" ? null : "end");
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Select end date and time"
+        >
+          <span className="text-sm">Sluttid</span>
+          <span className="text-sm">{formatDateTime(endDate)}</span>
+        </div>
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-300 ease-in-out",
+            visiblePicker === "end"
+              ? "max-h-[400px] opacity-100"
+              : "max-h-0 opacity-0"
+          )}
+        >
+          {visiblePicker === "end" && (
+            <InlineTimeWheelPicker
+              value={endDate}
+              onChange={handleEndDateChange}
+              baseDate={startDate}
+            />
+          )}
+        </div>
+        <div className="border-b"></div>
+      </div>
+
+      {availabilityChecked &&
+        !isCheckingAvailability &&
+        !availabilityData?.isAvailable &&
+        availabilityData?.conflictingBookings &&
+        availabilityData.conflictingBookings.length > 0 && (
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-muted-foreground">
+              Krockar med
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {availabilityData.conflictingBookings.map((booking) => {
+                const userName = userMap.get(booking.userId) || "Okänd användare";
+                const startTime = formatTime(new Date(booking.startDate));
+                const endTime = formatTime(new Date(booking.endDate));
+                return (
+                  <Badge key={booking.id} variant="default">
+                    {userName} {startTime}-{endTime}
+                  </Badge>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+      <Button
+        onClick={handleCreateBooking}
+        disabled={
+          !availabilityChecked ||
+          !availabilityData?.isAvailable ||
+          isCheckingAvailability
+        }
+        className="w-full"
+      >
+        Boka match
+      </Button>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger asChild>
+          <Button size="lg">Boka match</Button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerClose className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 z-50 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+            <XIcon className="h-5 w-5" />
+            <span className="sr-only">Close</span>
+          </DrawerClose>
+          <DrawerHeader>
+            <DrawerTitle>Boka match</DrawerTitle>
+          </DrawerHeader>
+          {bookingContent}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -170,121 +334,7 @@ export const BookingForm = () => {
         <DialogHeader>
           <DialogTitle>Boka match</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <div
-              className="flex cursor-pointer items-center justify-between pb-3 transition-colors hover:text-primary"
-              onClick={() =>
-                setVisiblePicker(visiblePicker === "start" ? null : "start")
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setVisiblePicker(visiblePicker === "start" ? null : "start");
-                }
-              }}
-              role="button"
-              tabIndex={0}
-              aria-label="Select start date and time"
-            >
-              <span className="text-sm">Starttid</span>
-              <span className="text-sm">{formatDateTime(startDate)}</span>
-            </div>
-            <div
-              className={cn(
-                "overflow-hidden transition-all duration-300 ease-in-out",
-                visiblePicker === "start"
-                  ? "max-h-[400px] opacity-100"
-                  : "max-h-0 opacity-0"
-              )}
-            >
-              {visiblePicker === "start" && (
-                <InlineDateTimeWheelPicker
-                  value={startDate}
-                  onChange={handleStartDateChange}
-                />
-              )}
-            </div>
-            <div className="border-b"></div>
-          </div>
-
-          <div>
-            <div
-              className="flex cursor-pointer items-center justify-between pb-3 transition-colors hover:text-primary"
-              onClick={() =>
-                setVisiblePicker(visiblePicker === "end" ? null : "end")
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setVisiblePicker(visiblePicker === "end" ? null : "end");
-                }
-              }}
-              role="button"
-              tabIndex={0}
-              aria-label="Select end date and time"
-            >
-              <span className="text-sm">Sluttid</span>
-              <span className="text-sm">{formatDateTime(endDate)}</span>
-            </div>
-            <div
-              className={cn(
-                "overflow-hidden transition-all duration-300 ease-in-out",
-                visiblePicker === "end"
-                  ? "max-h-[400px] opacity-100"
-                  : "max-h-0 opacity-0"
-              )}
-            >
-              {visiblePicker === "end" && (
-                <InlineTimeWheelPicker
-                  value={endDate}
-                  onChange={handleEndDateChange}
-                  baseDate={startDate}
-                />
-              )}
-            </div>
-            <div className="border-b"></div>
-          </div>
-
-          {isCheckingAvailability && (
-            <div className="flex items-center justify-center gap-2 rounded-md bg-muted p-3 text-sm">
-              <Spinner className="h-4 w-4" />
-              <span>Kontrollerar tillgänglighet...</span>
-            </div>
-          )}
-
-          {availabilityChecked && !isCheckingAvailability && (
-            <div
-              className={cn(
-                "rounded-md p-3 text-sm",
-                availabilityData?.isAvailable
-                  ? "bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-100"
-                  : "bg-red-50 text-red-900 dark:bg-red-950 dark:text-red-100"
-              )}
-            >
-              {availabilityData?.isAvailable
-                ? "Matchtid är ledig"
-                : `Tid redan bokad (${availabilityData?.conflictingBookings.length} konflikt${availabilityData?.conflictingBookings.length === 1 ? "" : "er"})`}
-            </div>
-          )}
-
-          <Button
-            onClick={handleCreateBooking}
-            disabled={
-              !availabilityChecked ||
-              !availabilityData?.isAvailable ||
-              isCheckingAvailability
-            }
-            className={cn(
-              "w-full",
-              availabilityChecked &&
-                !availabilityData?.isAvailable &&
-                "cursor-not-allowed opacity-50"
-            )}
-          >
-            Boka match
-          </Button>
-        </div>
+        {bookingContent}
       </DialogContent>
     </Dialog>
   );
