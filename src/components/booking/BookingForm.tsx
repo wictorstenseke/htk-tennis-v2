@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { toast } from "sonner";
 
@@ -11,7 +11,7 @@ import {
 } from "@/hooks/useBookings";
 import { cn } from "@/lib/utils";
 
-import { DateTimeWheelPicker } from "./DateTimeWheelPicker";
+import { InlineDateTimeWheelPicker } from "./DateTimeWheelPicker";
 
 const formatDateTime = (date: Date): string => {
   const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
@@ -58,8 +58,9 @@ export const BookingForm = () => {
     return end;
   });
 
-  const [startPickerOpen, setStartPickerOpen] = useState(false);
-  const [endPickerOpen, setEndPickerOpen] = useState(false);
+  const [visiblePicker, setVisiblePicker] = useState<"start" | "end" | null>(
+    null
+  );
   const [availabilityChecked, setAvailabilityChecked] = useState(false);
 
   const {
@@ -69,6 +70,24 @@ export const BookingForm = () => {
   } = useCheckAvailability(startDate, endDate);
 
   const createBookingMutation = useCreateBookingMutation();
+
+  useEffect(() => {
+    const checkAvailabilityAutomatically = async () => {
+      if (endDate <= startDate) {
+        setAvailabilityChecked(false);
+        return;
+      }
+
+      try {
+        await checkAvailability();
+        setAvailabilityChecked(true);
+      } catch {
+        setAvailabilityChecked(false);
+      }
+    };
+
+    checkAvailabilityAutomatically();
+  }, [startDate, endDate, checkAvailability]);
 
   const handleStartDateChange = (newStartDate: Date) => {
     setStartDate(newStartDate);
@@ -81,32 +100,6 @@ export const BookingForm = () => {
   const handleEndDateChange = (newEndDate: Date) => {
     setEndDate(newEndDate);
     setAvailabilityChecked(false);
-  };
-
-  const handleCheckAvailability = async () => {
-    if (endDate <= startDate) {
-      toast.error("End time must be after start time");
-      return;
-    }
-
-    try {
-      const result = await checkAvailability();
-      setAvailabilityChecked(true);
-
-      if (result.data?.isAvailable) {
-        toast.success("Time slot is available");
-      } else {
-        toast.error(
-          `Time slot is not available (${result.data?.conflictingBookings.length || 0} conflict${(result.data?.conflictingBookings.length || 0) === 1 ? "" : "s"})`
-        );
-      }
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to check availability"
-      );
-    }
   };
 
   const handleCreateBooking = async () => {
@@ -143,84 +136,88 @@ export const BookingForm = () => {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border bg-card p-6">
+      <div className="rounded-lg border bg-card p-6 transition-all duration-300 ease-in-out">
         <div className="space-y-4">
-          <div
-            className="flex cursor-pointer items-center justify-between border-b pb-3 transition-colors hover:text-primary"
-            onClick={() => setStartPickerOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setStartPickerOpen(true);
+          <div>
+            <div
+              className="flex cursor-pointer items-center justify-between border-b pb-3 transition-colors hover:text-primary"
+              onClick={() =>
+                setVisiblePicker(visiblePicker === "start" ? null : "start")
               }
-            }}
-            role="button"
-            tabIndex={0}
-            aria-label="Select start date and time"
-          >
-            <span className="text-sm">Start</span>
-            <span className="text-sm">{formatDateTime(startDate)}</span>
-          </div>
-
-          <div
-            className="flex cursor-pointer items-center justify-between border-b pb-3 transition-colors hover:text-primary"
-            onClick={() => setEndPickerOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setEndPickerOpen(true);
-              }
-            }}
-            role="button"
-            tabIndex={0}
-            aria-label="Select end date and time"
-          >
-            <span className="text-sm">End</span>
-            <span className="text-sm">{formatDateTime(endDate)}</span>
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <Button
-              variant="outline"
-              onClick={handleCheckAvailability}
-              disabled={isCheckingAvailability || endDate <= startDate}
-              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setVisiblePicker(visiblePicker === "start" ? null : "start");
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label="Select start date and time"
             >
-              {isCheckingAvailability ? (
-                <>
-                  <Spinner className="h-4 w-4" />
-                  Checking...
-                </>
-              ) : (
-                "Check Availability"
-              )}
-            </Button>
-            <Button
-              onClick={handleCreateBooking}
-              disabled={
-                !availabilityChecked ||
-                !availabilityData?.isAvailable ||
-                createBookingMutation.isPending
-              }
+              <span className="text-sm">Start</span>
+              <span className="text-sm">{formatDateTime(startDate)}</span>
+            </div>
+            <div
               className={cn(
-                "flex-1",
-                availabilityChecked &&
-                  !availabilityData?.isAvailable &&
-                  "cursor-not-allowed opacity-50"
+                "overflow-hidden transition-all duration-300 ease-in-out",
+                visiblePicker === "start"
+                  ? "max-h-[400px] opacity-100"
+                  : "max-h-0 opacity-0"
               )}
             >
-              {createBookingMutation.isPending ? (
-                <>
-                  <Spinner className="h-4 w-4" />
-                  Creating...
-                </>
-              ) : (
-                "Create Booking"
+              {visiblePicker === "start" && (
+                <InlineDateTimeWheelPicker
+                  value={startDate}
+                  onChange={handleStartDateChange}
+                />
               )}
-            </Button>
+            </div>
           </div>
 
-          {availabilityChecked && (
+          <div>
+            <div
+              className="flex cursor-pointer items-center justify-between border-b pb-3 transition-colors hover:text-primary"
+              onClick={() =>
+                setVisiblePicker(visiblePicker === "end" ? null : "end")
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setVisiblePicker(visiblePicker === "end" ? null : "end");
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label="Select end date and time"
+            >
+              <span className="text-sm">End</span>
+              <span className="text-sm">{formatDateTime(endDate)}</span>
+            </div>
+            <div
+              className={cn(
+                "overflow-hidden transition-all duration-300 ease-in-out",
+                visiblePicker === "end"
+                  ? "max-h-[400px] opacity-100"
+                  : "max-h-0 opacity-0"
+              )}
+            >
+              {visiblePicker === "end" && (
+                <InlineDateTimeWheelPicker
+                  value={endDate}
+                  onChange={handleEndDateChange}
+                />
+              )}
+            </div>
+          </div>
+
+          {isCheckingAvailability && (
+            <div className="flex items-center justify-center gap-2 rounded-md bg-muted p-3 text-sm">
+              <Spinner className="h-4 w-4" />
+              <span>Checking availability...</span>
+            </div>
+          )}
+
+          {availabilityChecked && !isCheckingAvailability && (
             <div
               className={cn(
                 "rounded-md p-3 text-sm",
@@ -234,24 +231,33 @@ export const BookingForm = () => {
                 : `Time slot not available (${availabilityData?.conflictingBookings.length} conflict${availabilityData?.conflictingBookings.length === 1 ? "" : "s"})`}
             </div>
           )}
+
+          <Button
+            onClick={handleCreateBooking}
+            disabled={
+              !availabilityChecked ||
+              !availabilityData?.isAvailable ||
+              createBookingMutation.isPending ||
+              isCheckingAvailability
+            }
+            className={cn(
+              "w-full",
+              availabilityChecked &&
+                !availabilityData?.isAvailable &&
+                "cursor-not-allowed opacity-50"
+            )}
+          >
+            {createBookingMutation.isPending ? (
+              <>
+                <Spinner className="h-4 w-4" />
+                Creating...
+              </>
+            ) : (
+              "Create Booking"
+            )}
+          </Button>
         </div>
       </div>
-
-      <DateTimeWheelPicker
-        open={startPickerOpen}
-        onOpenChange={setStartPickerOpen}
-        value={startDate}
-        onChange={handleStartDateChange}
-        title="Select Start Time"
-      />
-
-      <DateTimeWheelPicker
-        open={endPickerOpen}
-        onOpenChange={setEndPickerOpen}
-        value={endDate}
-        onChange={handleEndDateChange}
-        title="Select End Time"
-      />
     </div>
   );
 };

@@ -22,6 +22,12 @@ interface DateTimeWheelPickerProps {
   title: string;
 }
 
+interface InlineDateTimeWheelPickerProps {
+  value: Date;
+  onChange: (date: Date) => void;
+  title?: string;
+}
+
 const generateDateOptions = (): WheelPickerOption[] => {
   const options: WheelPickerOption[] = [];
   const today = new Date();
@@ -140,5 +146,73 @@ export const DateTimeWheelPicker = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+};
+
+export const InlineDateTimeWheelPicker = ({
+  value,
+  onChange,
+  title,
+}: InlineDateTimeWheelPickerProps) => {
+  const dateOptions = generateDateOptions();
+  const hourOptions = generateHourOptions();
+  const minuteOptions = generateMinuteOptions();
+
+  const selectedDate = value.toISOString().split("T")[0];
+  const selectedHour = value.getHours().toString();
+  const selectedMinute = Math.floor(value.getMinutes() / 15) * 15;
+
+  const handleDateChange = (newDate: string) => {
+    const date = new Date(newDate);
+    date.setHours(value.getHours());
+    date.setMinutes(value.getMinutes());
+    date.setSeconds(0);
+    date.setMilliseconds(0);
+    onChange(date);
+  };
+
+  const handleHourChange = (newHour: string) => {
+    const date = new Date(value);
+    date.setHours(parseInt(newHour));
+    date.setSeconds(0);
+    date.setMilliseconds(0);
+    onChange(date);
+  };
+
+  const handleMinuteChange = (newMinute: string) => {
+    const date = new Date(value);
+    date.setMinutes(parseInt(newMinute));
+    date.setSeconds(0);
+    date.setMilliseconds(0);
+    onChange(date);
+  };
+
+  return (
+    <div className="overflow-hidden py-4">
+      {title && (
+        <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+          {title}
+        </h3>
+      )}
+      <div className="flex justify-center">
+        <WheelPickerWrapper>
+          <WheelPicker
+            value={selectedDate}
+            onValueChange={handleDateChange}
+            options={dateOptions}
+          />
+          <WheelPicker
+            value={selectedHour}
+            onValueChange={handleHourChange}
+            options={hourOptions}
+          />
+          <WheelPicker
+            value={selectedMinute.toString()}
+            onValueChange={handleMinuteChange}
+            options={minuteOptions}
+          />
+        </WheelPickerWrapper>
+      </div>
+    </div>
   );
 };
