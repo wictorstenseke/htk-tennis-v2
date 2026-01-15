@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { bookingsApi } from "@/lib/api";
@@ -15,12 +17,14 @@ export const bookingKeys = {
 };
 
 /**
- * Hook to fetch all bookings from Firestore
+ * Hook to fetch all bookings from Firestore with live polling
  */
 export const useBookingsQuery = () => {
   return useQuery({
     queryKey: bookingKeys.list(),
     queryFn: () => bookingsApi.getBookings(),
+    staleTime: 0, // Always refetch on mount/focus
+    refetchInterval: 30000, // Poll every 30 seconds for live updates
   });
 };
 
@@ -36,16 +40,32 @@ export const useBookingsByDateQuery = (dateKey: string) => {
 };
 
 /**
- * Hook to check availability for a time slot
+ * Hook to check availability for a time slot using cached bookings data
+ * This avoids duplicate API calls by reusing the bookings query cache
  */
 export const useCheckAvailability = (startDate: Date, endDate: Date) => {
-  return useQuery({
-    queryKey: [...bookingKeys.all, "availability", startDate.toISOString(), endDate.toISOString()],
-    queryFn: () => bookingsApi.checkAvailability(startDate, endDate),
-    enabled: !!startDate && !!endDate && endDate > startDate,
-    staleTime: 0,
-    gcTime: 0,
-  });
+  const { data: bookings, isLoading } = useBookingsQuery();
+
+  // Compute availability from cached bookings using useMemo
+  const availabilityData = useMemo(() => {
+    if (!bookings) {
+      return null;
+    }
+
+    return bookingsApi.checkAvailabilityFromBookings(
+      startDate,
+      endDate,
+      bookings
+    );
+  }, [bookings, startDate, endDate]);
+
+  return {
+    data: availabilityData,
+    isLoading,
+    // Maintain compatibility with previous API but refetch is now a no-op
+    // since availability is computed from bookings cache
+    refetch: async () => ({ data: availabilityData }),
+  };
 };
 
 /**

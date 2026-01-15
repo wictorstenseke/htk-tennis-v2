@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { XIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -91,12 +91,10 @@ export const BookingForm = () => {
   const [visiblePicker, setVisiblePicker] = useState<"start" | "end" | null>(
     null
   );
-  const [availabilityChecked, setAvailabilityChecked] = useState(false);
 
   const {
     data: availabilityData,
     isLoading: isCheckingAvailability,
-    refetch: checkAvailability,
   } = useCheckAvailability(startDate, endDate);
 
   const createBookingMutation = useCreateBookingMutation();
@@ -111,30 +109,14 @@ export const BookingForm = () => {
     return map;
   }, [users]);
 
-  useEffect(() => {
-    const checkAvailabilityAutomatically = async () => {
-      if (endDate <= startDate) {
-        setAvailabilityChecked(false);
-        return;
-      }
-
-      try {
-        await checkAvailability();
-        setAvailabilityChecked(true);
-      } catch {
-        setAvailabilityChecked(false);
-      }
-    };
-
-    checkAvailabilityAutomatically();
-  }, [startDate, endDate, checkAvailability]);
+  // Check if availability has been computed and dates are valid
+  const availabilityChecked = availabilityData !== null && endDate > startDate;
 
   const handleStartDateChange = (newStartDate: Date) => {
     setStartDate(newStartDate);
     const newEnd = new Date(newStartDate);
     newEnd.setHours(newEnd.getHours() + 2);
     setEndDate(newEnd);
-    setAvailabilityChecked(false);
   };
 
   const handleEndDateChange = (newEndDate: Date) => {
@@ -145,7 +127,6 @@ export const BookingForm = () => {
     endWithStartDate.setSeconds(0);
     endWithStartDate.setMilliseconds(0);
     setEndDate(endWithStartDate);
-    setAvailabilityChecked(false);
   };
 
   const handleCreateBooking = () => {
@@ -166,7 +147,6 @@ export const BookingForm = () => {
 
     // Close dialog immediately for instant feedback (optimistic update will show booking in list)
     setOpen(false);
-    setAvailabilityChecked(false);
 
     // Use mutate instead of mutateAsync for immediate optimistic update
     createBookingMutation.mutate(

@@ -467,4 +467,29 @@ export const bookingsApi = {
       );
     }
   },
+
+  /**
+   * Client-side availability check using existing bookings data
+   * This avoids API calls by checking against bookings already in memory
+   */
+  checkAvailabilityFromBookings: (
+    startDate: Date,
+    endDate: Date,
+    bookings: Booking[]
+  ): { isAvailable: boolean; conflictingBookings: Booking[] } => {
+    const requestedStart = startDate.getTime();
+    const requestedEnd = endDate.getTime();
+
+    const conflictingBookings = bookings.filter((booking) => {
+      // Check for overlap: booking starts before requested ends AND booking ends after requested starts
+      const bookingStart = new Date(booking.startDate).getTime();
+      const bookingEnd = new Date(booking.endDate).getTime();
+      return bookingStart < requestedEnd && bookingEnd > requestedStart;
+    });
+
+    return {
+      isAvailable: conflictingBookings.length === 0,
+      conflictingBookings,
+    };
+  },
 };
