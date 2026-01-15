@@ -62,7 +62,11 @@ export const App = () => {
                   <TableCell>{user.displayName || "-"}</TableCell>
                   <TableCell>
                     {user.createdAt
-                      ? new Date(user.createdAt).toLocaleDateString()
+                      ? new Date(user.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })
                       : "-"}
                   </TableCell>
                   <TableCell className="font-mono text-xs">

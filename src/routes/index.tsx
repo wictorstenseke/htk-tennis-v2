@@ -1,19 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { auth } from "@/lib/firebase";
+import { waitForAuthReady } from "@/lib/auth";
 import { Landing } from "@/pages/Landing";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
-    // Wait for auth to initialize
-    await new Promise<void>((resolve) => {
-      const unsubscribe = auth.onAuthStateChanged(() => {
-        unsubscribe();
-        resolve();
-      });
-    });
-
-    const user = auth.currentUser;
+    const user = await waitForAuthReady();
     
     // Redirect authenticated users to /app
     if (user) {
