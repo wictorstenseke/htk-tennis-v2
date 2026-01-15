@@ -92,9 +92,7 @@ export const DateTimeWheelPicker = ({
   const [selectedDate, setSelectedDate] = useState(
     value.toISOString().split("T")[0]
   );
-  const [selectedHour, setSelectedHour] = useState(
-    value.getHours().toString()
-  );
+  const [selectedHour, setSelectedHour] = useState(value.getHours().toString());
   const [selectedMinute, setSelectedMinute] = useState(
     Math.floor(value.getMinutes() / 15) * 15
   );
