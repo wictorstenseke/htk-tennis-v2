@@ -1,14 +1,39 @@
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 import { Link } from "@tanstack/react-router";
+import { LogOutIcon, UserIcon } from "lucide-react";
 
+import { AuthDialog } from "@/components/auth/AuthDialog";
 import { ModeToggle } from "@/components/mode-toggle";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/useAuth";
+import { signOut } from "@/lib/auth";
 
 interface AppShellProps {
   children: ReactNode;
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const { user, loading } = useAuth();
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -46,10 +71,42 @@ export function AppShell({ children }: AppShellProps) {
             </nav>
           </div>
           <div className="flex items-center gap-2">
+            {!loading && (
+              <>
+                {user ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <UserIcon />
+                        {user.email}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        <LogOutIcon />
+                        Sign Out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAuthDialogOpen(true)}
+                  >
+                    Sign In
+                  </Button>
+                )}
+              </>
+            )}
             <ModeToggle />
           </div>
         </div>
       </header>
+
+      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
 
       {/* Main Content */}
       <main className="flex-1">
