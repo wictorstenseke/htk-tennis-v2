@@ -19,35 +19,31 @@ describe("Landing", () => {
     renderWithQueryClient(<Landing />);
 
     expect(
-      screen.getByRole("heading", { name: /welcome to your app/i })
+      screen.getByRole("heading", { name: /htk tennis v2/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/a modern react boilerplate with vite/i)
+      screen.getByText(/hogelids tennis klubb/i)
     ).toBeInTheDocument();
   });
 
-  it("renders all three action buttons", () => {
+  it("renders action buttons", () => {
     renderWithQueryClient(<Landing />);
 
-    expect(screen.getByRole("link", { name: /get started/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /query demo/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /view examples/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view on github/i })).toBeInTheDocument();
   });
 
-  it("renders exactly 9 feature cards", () => {
+  it("renders exactly 6 feature cards", () => {
     renderWithQueryClient(<Landing />);
 
-    // Verify all 9 feature card titles are present (more reliable than counting generic headings)
+    // Verify all 6 feature card titles are present
     const expectedCardTitles = [
-      "Fast Development",
-      "Type Safe",
+      "Firebase Authentication",
+      "Cloud Firestore",
       "Modern UI",
-      "TanStack Ecosystem",
-      "Testing Ready",
-      "CI/CD Ready",
-      "ESLint & Prettier",
-      "React 19",
-      "Developer Experience",
+      "Type Safe",
+      "Fast & Reliable",
+      "Mobile Responsive",
     ];
 
     expectedCardTitles.forEach((title) => {
@@ -58,15 +54,12 @@ describe("Landing", () => {
   it("renders all expected feature cards with correct titles", () => {
     renderWithQueryClient(<Landing />);
 
-    // Check for all 9 feature card titles
-    expect(screen.getByRole("heading", { name: /fast development/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /type safe/i })).toBeInTheDocument();
+    // Check for all 6 feature card titles
+    expect(screen.getByRole("heading", { name: /firebase authentication/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /cloud firestore/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /modern ui/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /tanstack ecosystem/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /testing ready/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /ci\/cd ready/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /eslint & prettier/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /react 19/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /developer experience/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /type safe/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /fast & reliable/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /mobile responsive/i })).toBeInTheDocument();
   });
 });

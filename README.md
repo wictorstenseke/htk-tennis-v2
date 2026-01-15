@@ -1,13 +1,14 @@
-# React + Vite + TypeScript Boilerplate
+# HTK Tennis V2
 
-A modern, production-ready React boilerplate with best practices built in.
+A modern web application for Hogelids Tennis Klubb (HTK), built with React, TypeScript, and Firebase.
 
 ## 🚀 Features
 
 - ⚡️ **Vite (Rolldown)** - Lightning fast build tool powered by Rust-based Rolldown bundler
 - ⚛️ **React 19** - Latest React with TypeScript
+- 🔥 **Firebase** - Authentication and Firestore database
 - 🎨 **Tailwind CSS v4** - Utility-first CSS framework
-- 🧩 **shadcn/ui** - Beautiful, accessible components built on Base UI primitives
+- 🧩 **shadcn/ui** - Beautiful, accessible components built on Radix UI primitives
 - 🛣️ **TanStack Router** - Type-safe file-based routing with auto-generated route tree
 - 🔄 **TanStack Query** - Powerful data fetching and caching
 - ✅ **Vitest** - Fast unit testing with coverage
@@ -16,35 +17,27 @@ A modern, production-ready React boilerplate with best practices built in.
 - 🤖 **GitHub Actions** - CI/CD pipeline
 - 📱 **Responsive** - Mobile-first design
 
-### About Rolldown-Vite
-
-This boilerplate uses [rolldown-vite](https://vite.dev/guide/migration#rolldown-migration) (aliased as `vite`), Vite's experimental Rust-based bundler that's 5-10x faster than the JavaScript bundler. It's a drop-in replacement providing identical API and significantly improved build performance.
-
 ## 📦 Project Structure
 
 ```
 src/
 ├── components/
+│   ├── auth/                  # Authentication components
+│   │   ├── AuthDialog.tsx     # Login dialog
+│   │   └── LoginForm.tsx      # Login form
 │   ├── layout/
-│   │   └── AppShell.tsx      # Main layout wrapper
+│   │   └── AppShell.tsx       # Main layout wrapper
 │   └── ui/                    # shadcn/ui components
-├── pages/
-│   ├── Landing.tsx            # Home page
-│   ├── Example.tsx            # Example page
-│   └── QueryDemo.tsx          # TanStack Query demo
+├── pages/                     # Page components
 ├── routes/                    # TanStack Router routes
-│   ├── __root.tsx             # Root layout
-│   ├── index.tsx              # / route
-│   ├── example.tsx            # /example route
-│   └── query-demo.tsx         # /query-demo route
-├── hooks/
-│   └── usePosts.ts            # Example query hooks
+│   └── __root.tsx             # Root layout
+├── hooks/                     # Custom React hooks
 ├── lib/
-│   ├── api.ts                 # API client with fetch wrapper
+│   ├── firebase.ts            # Firebase initialization
+│   ├── auth.ts                # Authentication utilities
 │   ├── queryClient.ts         # TanStack Query configuration
 │   └── utils.ts               # Utility functions
-├── types/
-│   └── api.ts                 # API type definitions
+├── types/                     # TypeScript type definitions
 ├── router.tsx                 # Router configuration
 ├── main.tsx                   # App entry point
 └── index.css                  # Global styles
@@ -52,10 +45,40 @@ src/
 
 ## 🛠️ Getting Started
 
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+- Firebase project (see Firebase Setup below)
+
 ### Install dependencies
 
 ```bash
 npm install
+```
+
+### Firebase Setup
+
+1. Create a new Firebase project at [Firebase Console](https://console.firebase.google.com/)
+2. Enable Authentication (Email/Password or other providers)
+3. Create a Firestore database
+4. Copy your Firebase configuration
+5. Create a `.env` file based on `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+6. Fill in your Firebase credentials in the `.env` file:
+
+```
+VITE_FIREBASE_API_KEY=your_api_key_here
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
 ### Start development server
@@ -63,6 +86,19 @@ npm install
 ```bash
 npm run dev
 ```
+
+### Firebase Emulators (Optional)
+
+For local development without using production Firebase:
+
+```bash
+firebase emulators:start
+```
+
+This starts:
+- Authentication emulator on port 9099
+- Firestore emulator on port 8080
+- Firebase UI on port 4000
 
 ### Build for production
 
@@ -161,14 +197,18 @@ The global QueryClient is configured in `src/lib/queryClient.ts`:
 Create custom hooks in `src/hooks/`:
 
 ```tsx
-// src/hooks/usePosts.ts
+// src/hooks/useMatches.ts
 import { useQuery } from "@tanstack/react-query";
-import { postsApi } from "@/lib/api";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-export const usePostsQuery = (params?: PaginationParams) => {
+export const useMatchesQuery = () => {
   return useQuery({
-    queryKey: ["posts", params],
-    queryFn: () => postsApi.getPosts(params),
+    queryKey: ["matches"],
+    queryFn: async () => {
+      const snapshot = await getDocs(collection(db, "matches"));
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    },
   });
 };
 ```
@@ -176,34 +216,15 @@ export const usePostsQuery = (params?: PaginationParams) => {
 ### Using Queries in Components
 
 ```tsx
-import { usePostsQuery } from "@/hooks/usePosts";
+import { useMatchesQuery } from "@/hooks/useMatches";
 
 const MyComponent = () => {
-  const { data, isLoading, isError, error } = usePostsQuery();
+  const { data, isLoading, isError, error } = useMatchesQuery();
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error: {error.message}</div>;
 
   return <div>{/* Render data */}</div>;
-};
-```
-
-### Mutations with Optimistic Updates
-
-```tsx
-import { useUpdatePostMutation } from "@/hooks/usePosts";
-
-const MyComponent = () => {
-  const updatePost = useUpdatePostMutation();
-
-  const handleUpdate = () => {
-    updatePost.mutate({
-      id: 1,
-      data: { title: "Updated Title" },
-    });
-  };
-
-  return <button onClick={handleUpdate}>Update</button>;
 };
 ```
 
@@ -215,8 +236,6 @@ React Query Devtools are included in development mode. Click the floating icon t
 - View query states
 - Manually trigger refetches
 - Debug query configurations
-
-Visit `/query-demo` to see a complete working example with queries, mutations, and cache management.
 
 ## 🎯 Layout System
 
@@ -299,6 +318,20 @@ Settings are pre-configured for:
 - Auto-fix ESLint issues
 - Consistent line endings
 
+## 📋 Cursor Rules
+
+This project uses modular cursor rules stored in `.cursor/rules/` to maintain consistent coding standards:
+
+- `global.mdc` - Project-wide conventions and TypeScript standards
+- `react-components.mdc` - React component patterns and JSX conventions
+- `firebase.mdc` - Firebase and Firestore patterns
+- `tanstack-query.mdc` - TanStack Query patterns for data fetching
+- `tanstack-router.mdc` - TanStack Router file-based routing conventions
+- `testing.mdc` - Vitest testing conventions
+- `ui-components.mdc` - Shadcn UI component patterns (Radix UI/Base UI)
+
+These rules are authoritative and should be read before making changes to the codebase.
+
 ## 🚀 CI/CD
 
 GitHub Actions workflow is included (`.github/workflows/ci.yml`):
@@ -313,16 +346,52 @@ GitHub Actions workflow is included (`.github/workflows/ci.yml`):
 
 - [Vite Documentation](https://vite.dev)
 - [React Documentation](https://react.dev)
+- [Firebase Documentation](https://firebase.google.com/docs)
 - [TanStack Router](https://tanstack.com/router)
 - [TanStack Query](https://tanstack.com/query)
 - [shadcn/ui](https://ui.shadcn.com)
 - [Tailwind CSS](https://tailwindcss.com)
 - [Vitest](https://vitest.dev)
 
+## 🔥 Firebase Deployment
+
+### Setup
+
+```bash
+npm install -g firebase-tools
+firebase login
+firebase init
+```
+
+### Deploy
+
+```bash
+npm run build
+firebase deploy
+```
+
+### Firestore Security Rules
+
+The project includes Firestore security rules in `firestore.rules`. Currently set to DEV MODE (open access):
+
+⚠️ **WARNING**: Before deploying to production, update the security rules to restrict access appropriately:
+
+```javascript
+// Example production rules
+match /databases/{database}/documents {
+  match /{document=**} {
+    allow read: if isAuthenticated();
+    allow write: if isAdminOrSuperUser();
+  }
+}
+```
+
+Helper functions for role-based access control are already defined in the rules file.
+
 ## 📄 License
 
 MIT
 
-## 🤝 Contributing
+## 🏸 About HTK
 
-Feel free to customize this boilerplate for your needs!
+Hogelids Tennis Klubb is a tennis club providing facilities and activities for tennis enthusiasts.
