@@ -21,35 +21,35 @@ const formatDateHeader = (isoString: string): string => {
 
   // Check if it's today
   if (date.toDateString() === today.toDateString()) {
-    return "Today";
+    return "Idag";
   }
 
   // Check if it's tomorrow
   if (date.toDateString() === tomorrow.toDateString()) {
-    return "Tomorrow";
+    return "Imorgon";
   }
 
   // Format as weekday, day month
   const dayNames = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
+    "Söndag",
+    "Måndag",
+    "Tisdag",
+    "Onsdag",
+    "Torsdag",
+    "Fredag",
+    "Lördag",
   ];
   const monthNames = [
-    "January",
-    "February",
-    "March",
+    "Januari",
+    "Februari",
+    "Mars",
     "April",
-    "May",
-    "June",
-    "July",
-    "August",
+    "Maj",
+    "Juni",
+    "Juli",
+    "Augusti",
     "September",
-    "October",
+    "Oktober",
     "November",
     "December",
   ];
@@ -106,6 +106,7 @@ export const BookingsList = () => {
     return (
       <div className="flex items-center justify-center py-12">
         <Spinner className="h-8 w-8" />
+        <span className="sr-only">Laddar...</span>
       </div>
     );
   }
@@ -113,11 +114,11 @@ export const BookingsList = () => {
   if (bookingsError) {
     return (
       <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
-        <h3 className="font-semibold">Error loading bookings</h3>
+        <h3 className="font-semibold">Fel vid laddning av bokningar</h3>
         <p className="text-sm">
           {bookingsError instanceof Error
             ? bookingsError.message
-            : "An error occurred"}
+            : "Ett fel uppstod"}
         </p>
       </div>
     );
@@ -126,7 +127,7 @@ export const BookingsList = () => {
   if (!bookings || bookings.length === 0) {
     return (
       <div className="rounded-lg border border-muted bg-muted/50 p-8 text-center">
-        <p className="text-muted-foreground">No bookings found</p>
+        <p className="text-muted-foreground">Inga bokningar hittades</p>
       </div>
     );
   }
@@ -150,7 +151,7 @@ export const BookingsList = () => {
             </h3>
             <div className="space-y-1">
               {dateBookings.map((booking) => {
-                const displayName = userMap.get(booking.userId) || "Unknown User";
+                const displayName = userMap.get(booking.userId) || "Okänd användare";
                 return (
                   <div
                     key={booking.id}

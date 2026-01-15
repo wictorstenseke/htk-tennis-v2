@@ -18,6 +18,7 @@ export const App = () => {
     return (
       <div className="flex items-center justify-center py-12">
         <Spinner className="h-8 w-8" />
+        <span className="sr-only">Laddar...</span>
       </div>
     );
   }
@@ -25,9 +26,9 @@ export const App = () => {
   if (error) {
     return (
       <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
-        <h3 className="font-semibold">Error loading users</h3>
+        <h3 className="font-semibold">Fel vid laddning av användare</h3>
         <p className="text-sm">
-          {error instanceof Error ? error.message : "An error occurred"}
+          {error instanceof Error ? error.message : "Ett fel uppstod"}
         </p>
       </div>
     );
@@ -36,9 +37,9 @@ export const App = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold">New Booking</h2>
+        <h2 className="text-2xl font-bold">Ny matchbokning</h2>
         <p className="text-muted-foreground">
-          Create a new booking by selecting start and end times
+          Boka match genom att välja start- och sluttider
         </p>
         <div className="mt-4">
           <BookingForm />
@@ -46,9 +47,9 @@ export const App = () => {
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold">All Bookings</h2>
+        <h2 className="text-2xl font-bold">Alla bokningar</h2>
         <p className="text-muted-foreground">
-          View all bookings from all users
+          Visa alla matchbokningar från alla användare
         </p>
         <div className="mt-4">
           <BookingsList />
@@ -56,14 +57,14 @@ export const App = () => {
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold">Users</h2>
+        <h2 className="text-2xl font-bold">Användare</h2>
         <p className="text-muted-foreground">
-          Manage and view all registered users
+          Hantera och visa alla registrerade användare
         </p>
         <div className="mt-4">
           {!users || users.length === 0 ? (
             <div className="rounded-lg border border-muted bg-muted/50 p-8 text-center">
-              <p className="text-muted-foreground">No users found</p>
+              <p className="text-muted-foreground">Inga användare hittades</p>
             </div>
           ) : (
             <div className="rounded-md border">

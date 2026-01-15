@@ -15,4 +15,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    host: true, // Listen on all network interfaces
+    port: 5173, // Default Vite port (change if needed)
+    strictPort: false, // If port is in use, try next available
+  },
 });

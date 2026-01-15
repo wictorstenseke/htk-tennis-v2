@@ -36,18 +36,18 @@ const generateDateOptions = (): WheelPickerOption[] => {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
 
-    const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+    const dayNames = ["sön", "mån", "tis", "ons", "tors", "fre", "lör"];
     const monthNames = [
       "jan",
       "feb",
       "mar",
       "apr",
-      "may",
+      "maj",
       "jun",
       "jul",
       "aug",
       "sep",
-      "oct",
+      "okt",
       "nov",
       "dec",
     ];
@@ -125,24 +125,27 @@ export const DateTimeWheelPicker = ({
               value={selectedDate}
               onValueChange={setSelectedDate}
               options={dateOptions}
+              visibleCount={12}
             />
             <WheelPicker
               value={selectedHour}
               onValueChange={setSelectedHour}
               options={hourOptions}
+              visibleCount={12}
             />
             <WheelPicker
               value={selectedMinute.toString()}
               onValueChange={(val: string) => setSelectedMinute(parseInt(val))}
               options={minuteOptions}
+              visibleCount={12}
             />
           </WheelPickerWrapper>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Avbryt
           </Button>
-          <Button onClick={handleConfirm}>Confirm</Button>
+          <Button onClick={handleConfirm}>Bekräfta</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -200,16 +203,19 @@ export const InlineDateTimeWheelPicker = ({
             value={selectedDate}
             onValueChange={handleDateChange}
             options={dateOptions}
+            visibleCount={12}
           />
           <WheelPicker
             value={selectedHour}
             onValueChange={handleHourChange}
             options={hourOptions}
+            visibleCount={12}
           />
           <WheelPicker
             value={selectedMinute.toString()}
             onValueChange={handleMinuteChange}
             options={minuteOptions}
+            visibleCount={12}
           />
         </WheelPickerWrapper>
       </div>
@@ -267,11 +273,13 @@ export const InlineTimeWheelPicker = ({
             value={selectedHour}
             onValueChange={handleHourChange}
             options={hourOptions}
+            visibleCount={12}
           />
           <WheelPicker
             value={selectedMinute.toString()}
             onValueChange={handleMinuteChange}
             options={minuteOptions}
+            visibleCount={12}
           />
         </WheelPickerWrapper>
       </div>

@@ -3,6 +3,13 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -17,18 +24,18 @@ import {
 } from "./DateTimeWheelPicker";
 
 const formatDateTime = (date: Date): string => {
-  const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  const dayNames = ["sön", "mån", "tis", "ons", "tors", "fre", "lör"];
   const monthNames = [
     "jan",
     "feb",
     "mar",
     "apr",
-    "may",
+    "maj",
     "jun",
     "jul",
     "aug",
     "sep",
-    "oct",
+    "okt",
     "nov",
     "dec",
   ];
@@ -44,6 +51,7 @@ const formatDateTime = (date: Date): string => {
 
 export const BookingForm = () => {
   const { user } = useAuth();
+  const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState(() => {
     const now = new Date();
     now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15);
@@ -113,17 +121,17 @@ export const BookingForm = () => {
 
   const handleCreateBooking = async () => {
     if (!user) {
-      toast.error("You must be signed in to create a booking");
+      toast.error("Du måste vara inloggad för att boka match");
       return;
     }
 
     if (!availabilityChecked) {
-      toast.error("Please check availability first");
+      toast.error("Kontrollera tillgänglighet först");
       return;
     }
 
     if (!availabilityData?.isAvailable) {
-      toast.error("Time slot is not available");
+      toast.error("Tid redan bokad");
       return;
     }
 
@@ -134,18 +142,25 @@ export const BookingForm = () => {
         endDate: endDate.toISOString(),
       });
 
-      toast.success("Booking created successfully");
+      toast.success("Match bokad");
       setAvailabilityChecked(false);
+      setOpen(false);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to create booking"
+        error instanceof Error ? error.message : "Kunde inte boka match"
       );
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border bg-card p-6 transition-all duration-300 ease-in-out">
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="lg">Boka match</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Boka match</DialogTitle>
+        </DialogHeader>
         <div className="space-y-4">
           <div>
             <div
@@ -163,7 +178,7 @@ export const BookingForm = () => {
               tabIndex={0}
               aria-label="Select start date and time"
             >
-              <span className="text-sm">Start</span>
+              <span className="text-sm">Starttid</span>
               <span className="text-sm">{formatDateTime(startDate)}</span>
             </div>
             <div
@@ -199,7 +214,7 @@ export const BookingForm = () => {
               tabIndex={0}
               aria-label="Select end date and time"
             >
-              <span className="text-sm">End</span>
+              <span className="text-sm">Sluttid</span>
               <span className="text-sm">{formatDateTime(endDate)}</span>
             </div>
             <div
@@ -223,7 +238,7 @@ export const BookingForm = () => {
           {isCheckingAvailability && (
             <div className="flex items-center justify-center gap-2 rounded-md bg-muted p-3 text-sm">
               <Spinner className="h-4 w-4" />
-              <span>Checking availability...</span>
+              <span>Kontrollerar tillgänglighet...</span>
             </div>
           )}
 
@@ -237,8 +252,8 @@ export const BookingForm = () => {
               )}
             >
               {availabilityData?.isAvailable
-                ? "Time slot is available"
-                : `Time slot not available (${availabilityData?.conflictingBookings.length} conflict${availabilityData?.conflictingBookings.length === 1 ? "" : "s"})`}
+                ? "Matchtid är ledig"
+                : `Tid redan bokad (${availabilityData?.conflictingBookings.length} konflikt${availabilityData?.conflictingBookings.length === 1 ? "" : "er"})`}
             </div>
           )}
 
@@ -260,14 +275,14 @@ export const BookingForm = () => {
             {createBookingMutation.isPending ? (
               <>
                 <Spinner className="h-4 w-4" />
-                Creating...
+                Bokar match...
               </>
             ) : (
-              "Create Booking"
+              "Boka match"
             )}
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
