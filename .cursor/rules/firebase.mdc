@@ -1,0 +1,31 @@
+---
+description: Firebase and Firestore patterns
+globs:
+  - src/**/*.ts
+  - src/**/*.tsx
+---
+
+# Firebase Conventions
+
+## Authentication
+
+- Use `auth` from `@/lib/firebase` for all authentication operations
+- Never store sensitive user data in localStorage
+- Handle auth state changes with Firebase's `onAuthStateChanged`
+
+## Firestore
+
+- Use `db` from `@/lib/firebase` for all Firestore operations
+- Prefer modular imports: `import { collection, getDocs } from "firebase/firestore"`
+- Use TypeScript types for Firestore documents
+
+## Security
+
+- Never expose Firebase credentials in client code (use env variables)
+- Review and update `firestore.rules` before production deployment
+- Current rules are in DEV MODE (open access) - must be locked down for production
+
+## Data Fetching
+
+- Use TanStack Query for Firestore queries (not direct Firebase listeners in components)
+- Wrap Firestore operations in query hooks (see tanstack-query.mdc)
