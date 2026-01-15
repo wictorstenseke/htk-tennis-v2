@@ -1,6 +1,6 @@
-# React + Vite + TypeScript + Firebase Auth
+# HTK Tennis V2
 
-A modern, production-ready React application with Firebase authentication and user management.
+A modern web application for Hogelids Tennis Klubb (HTK), built with React, TypeScript, and Firebase authentication and user management.
 
 ## 🚀 Features
 
@@ -9,7 +9,7 @@ A modern, production-ready React application with Firebase authentication and us
 - 🔥 **Firebase** - Authentication and Firestore database
 - 🔐 **Protected Routes** - Route guards with Firebase Auth integration
 - 🎨 **Tailwind CSS v4** - Utility-first CSS framework
-- 🧩 **shadcn/ui** - Beautiful, accessible components built on Base UI primitives
+- 🧩 **shadcn/ui** - Beautiful, accessible components built on Radix UI primitives
 - 🛣️ **TanStack Router** - Type-safe file-based routing with auto-generated route tree
 - 🔄 **TanStack Query** - Powerful data fetching and caching
 - ✅ **Vitest** - Fast unit testing with coverage
