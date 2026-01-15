@@ -1,11 +1,13 @@
-# React + Vite + TypeScript Boilerplate
+# React + Vite + TypeScript + Firebase Auth
 
-A modern, production-ready React boilerplate with best practices built in.
+A modern, production-ready React application with Firebase authentication and user management.
 
 ## 🚀 Features
 
 - ⚡️ **Vite (Rolldown)** - Lightning fast build tool powered by Rust-based Rolldown bundler
 - ⚛️ **React 19** - Latest React with TypeScript
+- 🔥 **Firebase** - Authentication and Firestore database
+- 🔐 **Protected Routes** - Route guards with Firebase Auth integration
 - 🎨 **Tailwind CSS v4** - Utility-first CSS framework
 - 🧩 **shadcn/ui** - Beautiful, accessible components built on Base UI primitives
 - 🛣️ **TanStack Router** - Type-safe file-based routing with auto-generated route tree
@@ -25,32 +27,101 @@ This boilerplate uses [rolldown-vite](https://vite.dev/guide/migration#rolldown-
 ```
 src/
 ├── components/
+│   ├── auth/
+│   │   ├── AuthDialog.tsx      # Auth dialog (sign in/sign up)
+│   │   └── LoginForm.tsx       # Login/signup form component
 │   ├── layout/
-│   │   └── AppShell.tsx      # Main layout wrapper
-│   └── ui/                    # shadcn/ui components
+│   │   └── AppShell.tsx        # Main layout wrapper with auth state
+│   └── ui/                      # shadcn/ui components
 ├── pages/
-│   ├── Landing.tsx            # Home page
-│   ├── Example.tsx            # Example page
-│   └── QueryDemo.tsx          # TanStack Query demo
-├── routes/                    # TanStack Router routes
-│   ├── __root.tsx             # Root layout
-│   ├── index.tsx              # / route
-│   ├── example.tsx            # /example route
-│   └── query-demo.tsx         # /query-demo route
+│   ├── Landing.tsx              # Login page (/) - unauthenticated users
+│   └── App.tsx                  # Users table (/app) - authenticated users
+├── routes/                      # TanStack Router routes
+│   ├── __root.tsx               # Root layout
+│   ├── index.tsx                # / route (redirects to /app if authenticated)
+│   └── app.tsx                  # /app route (protected, requires auth)
 ├── hooks/
-│   └── usePosts.ts            # Example query hooks
+│   ├── useAuth.ts               # Firebase auth hook
+│   ├── usePosts.ts              # Example query hooks
+│   └── useUsers.ts              # Users query hook (Firestore)
 ├── lib/
-│   ├── api.ts                 # API client with fetch wrapper
-│   ├── queryClient.ts         # TanStack Query configuration
-│   └── utils.ts               # Utility functions
+│   ├── api.ts                   # API client with Firestore integration
+│   ├── auth.ts                  # Firebase auth functions
+│   ├── firebase.ts              # Firebase configuration
+│   ├── queryClient.ts           # TanStack Query configuration
+│   └── utils.ts                 # Utility functions
 ├── types/
-│   └── api.ts                 # API type definitions
-├── router.tsx                 # Router configuration
-├── main.tsx                   # App entry point
-└── index.css                  # Global styles
+│   └── api.ts                   # API type definitions (Post, User)
+├── router.tsx                   # Router configuration
+├── main.tsx                     # App entry point
+└── index.css                    # Global styles
+```
+
+## 🔐 Authentication & Authorization
+
+This app uses Firebase Authentication with the following flow:
+
+1. **Unauthenticated Users**: Redirected to `/` (landing page with login form)
+2. **Authenticated Users**: Redirected to `/app` (protected users table)
+
+### Route Guards
+
+Routes use `beforeLoad` guards to check authentication:
+
+- `/` - Redirects authenticated users to `/app`
+- `/app` - Redirects unauthenticated users to `/`
+
+### Auth Functions
+
+```tsx
+import { signIn, signUp, signOut } from "@/lib/auth";
+
+// Sign in with email/password
+await signIn("user@example.com", "password");
+
+// Sign up new user
+await signUp("user@example.com", "password");
+
+// Sign out
+await signOut();
+```
+
+### Using Auth State
+
+```tsx
+import { useAuth } from "@/hooks/useAuth";
+
+const MyComponent = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div>Loading...</div>;
+  if (!user) return <div>Please sign in</div>;
+
+  return <div>Welcome, {user.email}!</div>;
+};
 ```
 
 ## 🛠️ Getting Started
+
+### Prerequisites
+
+You need Firebase project credentials. Create a `.env` file in the root directory:
+
+```bash
+cp .env.example .env
+```
+
+Then fill in your Firebase configuration values:
+
+```env
+VITE_FIREBASE_API_KEY=your_api_key_here
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+```
 
 ### Install dependencies
 
@@ -216,7 +287,21 @@ React Query Devtools are included in development mode. Click the floating icon t
 - Manually trigger refetches
 - Debug query configurations
 
-Visit `/query-demo` to see a complete working example with queries, mutations, and cache management.
+## 🗄️ Firestore Data Structure
+
+### Users Collection
+
+The app expects a `users` collection in Firestore with documents containing:
+
+```typescript
+{
+  email: string;          // User email address
+  displayName?: string;   // Optional display name
+  createdAt?: string;     // ISO date string
+}
+```
+
+Documents are identified by the Firebase Auth UID as the document ID.
 
 ## 🎯 Layout System
 
@@ -313,6 +398,7 @@ GitHub Actions workflow is included (`.github/workflows/ci.yml`):
 
 - [Vite Documentation](https://vite.dev)
 - [React Documentation](https://react.dev)
+- [Firebase Documentation](https://firebase.google.com/docs)
 - [TanStack Router](https://tanstack.com/router)
 - [TanStack Query](https://tanstack.com/query)
 - [shadcn/ui](https://ui.shadcn.com)
