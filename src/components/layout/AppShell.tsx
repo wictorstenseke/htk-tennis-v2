@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import { LogOutIcon, UserIcon } from "lucide-react";
 
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { AuthDialog } from "@/components/auth/AuthDialog";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -26,12 +26,26 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   const { user, loading } = useAuth();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
       await signOut();
+      navigate({ to: "/" });
     } catch (error) {
       console.error("Error signing out:", error);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setAuthDialogOpen(false);
+    navigate({ to: "/app" });
+  };
+
+  const handleAppClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      setAuthDialogOpen(true);
     }
   };
 
@@ -52,6 +66,15 @@ export function AppShell({ children }: AppShellProps) {
                 inactiveProps={{ className: "text-foreground/60" }}
               >
                 Home
+              </Link>
+              <Link
+                to="/app"
+                onClick={handleAppClick}
+                className="transition-colors hover:text-foreground/80"
+                activeProps={{ className: "text-foreground" }}
+                inactiveProps={{ className: "text-foreground/60" }}
+              >
+                App
               </Link>
             </nav>
           </div>
@@ -91,7 +114,11 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </header>
 
-      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
+      <AuthDialog
+        open={authDialogOpen}
+        onOpenChange={setAuthDialogOpen}
+        onSuccess={handleAuthSuccess}
+      />
 
       {/* Main Content */}
       <main className="flex-1">

@@ -1,5 +1,5 @@
 import { screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { renderWithQueryClient } from "@/test/utils";
 
@@ -8,18 +8,15 @@ import { Landing } from "./Landing";
 // Mock TanStack Router
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
 }));
 
-// Mock Firebase
-vi.mock("@/lib/firebase", () => ({
-  auth: {
-    onAuthStateChanged: vi.fn((callback) => {
-      callback(null);
-      return vi.fn();
-    }),
-    currentUser: null,
-  },
-  db: {},
+// Mock useAuth hook
+const mockUseAuth = vi.fn();
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: () => mockUseAuth(),
 }));
 
 // Mock auth functions
@@ -29,27 +26,91 @@ vi.mock("@/lib/auth", () => ({
   signOut: vi.fn(),
 }));
 
+// Mock Firebase
+vi.mock("@/lib/firebase", () => ({
+  auth: {
+    onAuthStateChanged: vi.fn(),
+    currentUser: null,
+  },
+  db: {},
+}));
+
 describe("Landing", () => {
-  it("renders the login form", () => {
-    renderWithQueryClient(<Landing />);
-
-    expect(
-      screen.getByRole("heading", { name: /welcome back/i })
-    ).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it("renders email and password fields", () => {
-    renderWithQueryClient(<Landing />);
+  describe("when user is not authenticated", () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({ user: null, loading: false });
+    });
 
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    it("renders the login form", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(
+        screen.getByRole("heading", { name: /welcome back/i })
+      ).toBeInTheDocument();
+    });
+
+    it("renders email and password fields", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    });
+
+    it("renders sign in button", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(
+        screen.getByRole("button", { name: /sign in/i })
+      ).toBeInTheDocument();
+    });
   });
 
-  it("renders sign in button", () => {
-    renderWithQueryClient(<Landing />);
+  describe("when user is authenticated", () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: { email: "test@example.com", uid: "123" },
+        loading: false,
+      });
+    });
 
-    expect(
-      screen.getByRole("button", { name: /sign in/i })
-    ).toBeInTheDocument();
+    it("renders welcome message with user email", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(
+        screen.getByRole("heading", { name: /welcome back!/i })
+      ).toBeInTheDocument();
+      expect(screen.getByText(/test@example.com/i)).toBeInTheDocument();
+    });
+
+    it("renders go to app button", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(
+        screen.getByRole("link", { name: /go to app/i })
+      ).toBeInTheDocument();
+    });
+
+    it("does not render login form", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("when loading", () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({ user: null, loading: true });
+    });
+
+    it("renders loading state", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    });
   });
 });
