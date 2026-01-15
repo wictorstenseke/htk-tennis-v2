@@ -1,0 +1,23 @@
+---
+description: TanStack Router file-based routing conventions
+globs:
+  - src/routes/**/*.tsx
+---
+
+# TanStack Router Conventions
+
+## File Structure
+
+- Route files live in `src/routes/` and export `Route` using `createFileRoute()`
+- Page components live in `src/pages/`, imported by route files
+- Root layout is defined in `src/routes/__root.tsx`
+
+## Navigation
+
+- Use typed `Link` component from `@tanstack/react-router` for navigation
+- Avoid raw `<a>` tags for internal navigation
+
+## Route Parameters
+
+- Define route params with Zod validation when applicable
+- Use `useParams()` and `useSearch()` hooks for accessing route data

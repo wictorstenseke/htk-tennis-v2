@@ -1,0 +1,30 @@
+---
+description: Vitest testing conventions
+globs:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+---
+
+# Testing Conventions
+
+## File Organization
+
+- Co-locate test files with source (e.g., `utils.test.ts` next to `utils.ts`)
+- Import test utilities from `vitest` directly
+
+## Test Structure
+
+- Use `describe` blocks to group related tests
+- Test names should describe behavior: `it("should [verb] when [condition]")`
+
+## Example
+
+```typescript
+import { describe, it, expect } from "vitest";
+
+describe("MyFunction", () => {
+  it("should return true when input is valid", () => {
+    expect(myFunction(validInput)).toBe(true);
+  });
+});
+```
