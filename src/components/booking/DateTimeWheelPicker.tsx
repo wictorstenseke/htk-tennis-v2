@@ -216,3 +216,65 @@ export const InlineDateTimeWheelPicker = ({
     </div>
   );
 };
+
+interface InlineTimeWheelPickerProps {
+  value: Date;
+  onChange: (date: Date) => void;
+  baseDate: Date;
+  title?: string;
+}
+
+export const InlineTimeWheelPicker = ({
+  value,
+  onChange,
+  baseDate,
+  title,
+}: InlineTimeWheelPickerProps) => {
+  const hourOptions = generateHourOptions();
+  const minuteOptions = generateMinuteOptions();
+
+  const selectedHour = value.getHours().toString();
+  const selectedMinute = Math.floor(value.getMinutes() / 15) * 15;
+
+  const handleHourChange = (newHour: string) => {
+    const date = new Date(baseDate);
+    date.setHours(parseInt(newHour));
+    date.setMinutes(selectedMinute);
+    date.setSeconds(0);
+    date.setMilliseconds(0);
+    onChange(date);
+  };
+
+  const handleMinuteChange = (newMinute: string) => {
+    const date = new Date(baseDate);
+    date.setHours(parseInt(selectedHour));
+    date.setMinutes(parseInt(newMinute));
+    date.setSeconds(0);
+    date.setMilliseconds(0);
+    onChange(date);
+  };
+
+  return (
+    <div className="overflow-hidden py-4">
+      {title && (
+        <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+          {title}
+        </h3>
+      )}
+      <div className="flex justify-center">
+        <WheelPickerWrapper>
+          <WheelPicker
+            value={selectedHour}
+            onValueChange={handleHourChange}
+            options={hourOptions}
+          />
+          <WheelPicker
+            value={selectedMinute.toString()}
+            onValueChange={handleMinuteChange}
+            options={minuteOptions}
+          />
+        </WheelPickerWrapper>
+      </div>
+    </div>
+  );
+};

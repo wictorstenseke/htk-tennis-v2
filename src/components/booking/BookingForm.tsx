@@ -11,7 +11,10 @@ import {
 } from "@/hooks/useBookings";
 import { cn } from "@/lib/utils";
 
-import { InlineDateTimeWheelPicker } from "./DateTimeWheelPicker";
+import {
+  InlineDateTimeWheelPicker,
+  InlineTimeWheelPicker,
+} from "./DateTimeWheelPicker";
 
 const formatDateTime = (date: Date): string => {
   const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
@@ -98,7 +101,13 @@ export const BookingForm = () => {
   };
 
   const handleEndDateChange = (newEndDate: Date) => {
-    setEndDate(newEndDate);
+    // Ensure end date uses the same date as start date, only time changes
+    const endWithStartDate = new Date(startDate);
+    endWithStartDate.setHours(newEndDate.getHours());
+    endWithStartDate.setMinutes(newEndDate.getMinutes());
+    endWithStartDate.setSeconds(0);
+    endWithStartDate.setMilliseconds(0);
+    setEndDate(endWithStartDate);
     setAvailabilityChecked(false);
   };
 
@@ -202,9 +211,10 @@ export const BookingForm = () => {
               )}
             >
               {visiblePicker === "end" && (
-                <InlineDateTimeWheelPicker
+                <InlineTimeWheelPicker
                   value={endDate}
                   onChange={handleEndDateChange}
+                  baseDate={startDate}
                 />
               )}
             </div>
