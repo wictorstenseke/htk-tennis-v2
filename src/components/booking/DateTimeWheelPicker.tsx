@@ -189,32 +189,38 @@ export const InlineDateTimeWheelPicker = ({
   };
 
   return (
-    <div className="overflow-hidden py-4">
+    <div className="overflow-hidden pt-0 pb-3">
       {title && (
         <h3 className="mb-3 text-sm font-medium text-muted-foreground">
           {title}
         </h3>
       )}
       <div className="flex justify-center">
-        <WheelPickerWrapper>
-          <WheelPicker
-            value={selectedDate}
-            onValueChange={handleDateChange}
-            options={dateOptions}
-            visibleCount={12}
-          />
-          <WheelPicker
-            value={selectedHour}
-            onValueChange={handleHourChange}
-            options={hourOptions}
-            visibleCount={12}
-          />
-          <WheelPicker
-            value={selectedMinute.toString()}
-            onValueChange={handleMinuteChange}
-            options={minuteOptions}
-            visibleCount={12}
-          />
+        <WheelPickerWrapper className="w-auto">
+          <div className="w-6/12">
+            <WheelPicker
+              value={selectedDate}
+              onValueChange={handleDateChange}
+              options={dateOptions}
+              visibleCount={12}
+            />
+          </div>
+          <div className="w-3/12">
+            <WheelPicker
+              value={selectedHour}
+              onValueChange={handleHourChange}
+              options={hourOptions}
+              visibleCount={12}
+            />
+          </div>
+          <div className="w-3/12">
+            <WheelPicker
+              value={selectedMinute.toString()}
+              onValueChange={handleMinuteChange}
+              options={minuteOptions}
+              visibleCount={12}
+            />
+          </div>
         </WheelPickerWrapper>
       </div>
     </div>
@@ -259,26 +265,30 @@ export const InlineTimeWheelPicker = ({
   };
 
   return (
-    <div className="overflow-hidden py-4">
+    <div className="overflow-hidden pt-0 pb-3">
       {title && (
         <h3 className="mb-3 text-sm font-medium text-muted-foreground">
           {title}
         </h3>
       )}
       <div className="flex justify-center">
-        <WheelPickerWrapper>
-          <WheelPicker
-            value={selectedHour}
-            onValueChange={handleHourChange}
-            options={hourOptions}
-            visibleCount={12}
-          />
-          <WheelPicker
-            value={selectedMinute.toString()}
-            onValueChange={handleMinuteChange}
-            options={minuteOptions}
-            visibleCount={12}
-          />
+        <WheelPickerWrapper className="w-auto">
+          <div className="w-6/12">
+            <WheelPicker
+              value={selectedHour}
+              onValueChange={handleHourChange}
+              options={hourOptions}
+              visibleCount={12}
+            />
+          </div>
+          <div className="w-6/12">
+            <WheelPicker
+              value={selectedMinute.toString()}
+              onValueChange={handleMinuteChange}
+              options={minuteOptions}
+              visibleCount={12}
+            />
+          </div>
         </WheelPickerWrapper>
       </div>
     </div>

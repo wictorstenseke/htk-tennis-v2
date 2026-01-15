@@ -53,12 +53,12 @@ export function AppShell({ children }: AppShellProps) {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="container mx-auto flex h-14 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="mr-4 flex">
-            <Link to="/" className="mr-6 flex items-center space-x-2">
-              <span className="font-bold">My App</span>
+        <div className="container mx-auto flex h-14 max-w-screen-2xl items-center justify-between gap-2 overflow-hidden px-2 sm:px-4 md:px-6 lg:px-8">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
+            <Link to="/" className="flex shrink-0 items-center space-x-2">
+              <span className="font-bold text-sm sm:text-base">My App</span>
             </Link>
-            <nav className="flex items-center space-x-6 text-sm font-medium">
+            <nav className="hidden items-center gap-3 text-sm font-medium sm:flex sm:gap-6">
               <Link
                 to="/"
                 className="transition-colors hover:text-foreground/80"
@@ -78,19 +78,21 @@ export function AppShell({ children }: AppShellProps) {
               </Link>
             </nav>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             {!loading && (
               <>
                 {user ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <UserIcon />
-                        {user.email}
+                      <Button variant="outline" size="sm" className="gap-1 sm:gap-2">
+                        <UserIcon className="h-4 w-4 shrink-0" />
+                        <span className="hidden truncate sm:inline">{user.email}</span>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                      <DropdownMenuLabel className="truncate max-w-[200px]">
+                        {user.email}
+                      </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleSignOut}>
                         <LogOutIcon />
@@ -103,6 +105,7 @@ export function AppShell({ children }: AppShellProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => setAuthDialogOpen(true)}
+                    className="text-xs sm:text-sm"
                   >
                     Sign In
                   </Button>
@@ -122,15 +125,15 @@ export function AppShell({ children }: AppShellProps) {
 
       {/* Main Content */}
       <main className="flex-1">
-        <div className="container mx-auto max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="container mx-auto max-w-screen-2xl px-2 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-8">
           {children}
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-6 md:py-8">
-        <div className="container mx-auto flex max-w-screen-2xl flex-col items-center justify-between gap-4 px-4 sm:px-6 md:flex-row lg:px-8">
-          <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
+      <footer className="border-t py-4 sm:py-6 md:py-8">
+        <div className="container mx-auto flex max-w-screen-2xl flex-col items-center justify-between gap-4 px-2 sm:px-4 md:flex-row md:px-6 lg:px-8">
+          <p className="text-center text-xs sm:text-sm leading-loose text-muted-foreground md:text-left">
             Built with React, Vite, and shadcn/ui
           </p>
         </div>

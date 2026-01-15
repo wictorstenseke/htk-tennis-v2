@@ -173,7 +173,7 @@ export const BookingForm = () => {
         <div className="space-y-4">
           <div>
             <div
-              className="flex cursor-pointer items-center justify-between border-b pb-3 transition-colors hover:text-primary"
+              className="flex cursor-pointer items-center justify-between pb-3 transition-colors hover:text-primary"
               onClick={() =>
                 setVisiblePicker(visiblePicker === "start" ? null : "start")
               }
@@ -205,11 +205,12 @@ export const BookingForm = () => {
                 />
               )}
             </div>
+            <div className="border-b"></div>
           </div>
 
           <div>
             <div
-              className="flex cursor-pointer items-center justify-between border-b pb-3 transition-colors hover:text-primary"
+              className="flex cursor-pointer items-center justify-between pb-3 transition-colors hover:text-primary"
               onClick={() =>
                 setVisiblePicker(visiblePicker === "end" ? null : "end")
               }
@@ -242,6 +243,7 @@ export const BookingForm = () => {
                 />
               )}
             </div>
+            <div className="border-b"></div>
           </div>
 
           {isCheckingAvailability && (
