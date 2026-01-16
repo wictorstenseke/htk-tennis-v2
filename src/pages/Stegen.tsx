@@ -186,10 +186,6 @@ export const Stegen = () => {
     }
 
     const winnerId = draft.winnerId;
-    if (!winnerId) {
-      toast.error("Välj vinnare innan du rapporterar resultatet.");
-      return;
-    }
 
     const loserId =
       winnerId === match.playerAId ? match.playerBId : match.playerAId;
