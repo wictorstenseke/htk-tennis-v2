@@ -7,6 +7,7 @@ import {
   ListOrdered,
   LogOutIcon,
   Menu,
+  Settings,
   UserIcon,
 } from "lucide-react";
 
@@ -32,6 +33,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrentUserQuery } from "@/hooks/useUsers";
+import { canAccessAdmin } from "@/lib/admin";
 import { signOut } from "@/lib/auth";
 
 interface AppShellProps {
@@ -40,8 +43,11 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const { user, loading } = useAuth();
+  const { data: currentUser } = useCurrentUserQuery();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const navigate = useNavigate();
+
+  const isAdmin = canAccessAdmin(currentUser || null);
 
   const handleSignOut = async () => {
     try {
@@ -108,6 +114,16 @@ export function AppShell({ children }: AppShellProps) {
                   <ListOrdered className="mr-2 h-4 w-4" />
                   Stegen
                 </Link>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="inline-flex h-10 items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-accent-foreground"
+                    activeProps={{ className: "bg-muted text-accent-foreground" }}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Admin
+                  </Link>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -129,9 +145,11 @@ export function AppShell({ children }: AppShellProps) {
                           {user.email}
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <UserIcon className="mr-2 h-4 w-4" />
-                          Profil
+                        <DropdownMenuItem asChild>
+                          <Link to="/profile" className="cursor-pointer">
+                            <UserIcon className="mr-2 h-4 w-4" />
+                            Profil
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleSignOut}>
@@ -214,6 +232,15 @@ export function AppShell({ children }: AppShellProps) {
                           <ListOrdered className="h-4 w-4" />
                           Stegen
                         </Link>
+                        {isAdmin && (
+                          <Link
+                            to="/admin"
+                            className="flex items-center gap-2 text-md font-semibold"
+                          >
+                            <Settings className="h-4 w-4" />
+                            Admin
+                          </Link>
+                        )}
                       </nav>
 
                       {!loading && user && (
@@ -233,10 +260,12 @@ export function AppShell({ children }: AppShellProps) {
                           <Button
                             variant="outline"
                             className="w-full justify-start"
-                            onClick={() => {}}
+                            asChild
                           >
-                            <UserIcon className="mr-2 h-4 w-4" />
-                            Profil
+                            <Link to="/profile">
+                              <UserIcon className="mr-2 h-4 w-4" />
+                              Profil
+                            </Link>
                           </Button>
                           <Button
                             variant="outline"
