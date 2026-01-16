@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { usersApi } from "@/lib/api";
+import { isFirebaseConfigured } from "@/lib/firebase";
 
 /**
  * Query keys for users
@@ -18,5 +19,6 @@ export const useUsersQuery = () => {
   return useQuery({
     queryKey: userKeys.list(),
     queryFn: () => usersApi.getUsers(),
+    enabled: isFirebaseConfigured,
   });
 };

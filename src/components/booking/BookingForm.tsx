@@ -34,6 +34,8 @@ import {
   InlineTimeWheelPicker,
 } from "./DateTimeWheelPicker";
 
+import type { Booking } from "@/types/api";
+
 const formatDateTime = (date: Date): string => {
   const dayNames = ["sön", "mån", "tis", "ons", "tors", "fre", "lör"];
   const monthNames = [
@@ -66,7 +68,15 @@ const formatTime = (date: Date): string => {
   return `${hours}.${minutes}`;
 };
 
-export const BookingForm = () => {
+interface BookingFormProps {
+  triggerLabel?: string;
+  onBookingCreated?: (booking: Booking) => void;
+}
+
+export const BookingForm = ({
+  triggerLabel = "Boka match",
+  onBookingCreated,
+}: BookingFormProps) => {
   const { user } = useAuth();
   const isMobile = useMediaQuery("(max-width: 640px)");
   const { data: users } = useUsersQuery();
@@ -154,9 +164,10 @@ export const BookingForm = () => {
         endDate: endDate.toISOString(),
       },
       {
-        onSuccess: () => {
+        onSuccess: (booking) => {
           // Show success toast only after server confirms
           toast.success("Match bokad");
+          onBookingCreated?.(booking);
         },
         onError: (error) => {
           // Show error toast if mutation fails (optimistic update will be rolled back)
@@ -293,7 +304,7 @@ export const BookingForm = () => {
     return (
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
-          <Button size="lg">Boka match</Button>
+          <Button size="lg">{triggerLabel}</Button>
         </DrawerTrigger>
         <DrawerContent>
           <DrawerClose className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 z-50 cursor-pointer rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
@@ -312,7 +323,7 @@ export const BookingForm = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="lg">Boka match</Button>
+        <Button size="lg">{triggerLabel}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>

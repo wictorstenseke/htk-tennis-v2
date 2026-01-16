@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { bookingsApi } from "@/lib/api";
+import { isFirebaseConfigured } from "@/lib/firebase";
 
 import type { Booking, CreateBookingInput } from "@/types/api";
 
@@ -25,6 +26,7 @@ export const useBookingsQuery = () => {
     queryFn: () => bookingsApi.getBookings(),
     staleTime: 0, // Always refetch on mount/focus
     refetchInterval: 30000, // Poll every 30 seconds for live updates
+    enabled: isFirebaseConfigured,
   });
 };
 
@@ -35,7 +37,7 @@ export const useBookingsByDateQuery = (dateKey: string) => {
   return useQuery({
     queryKey: bookingKeys.byDate(dateKey),
     queryFn: () => bookingsApi.getBookingsByDate(dateKey),
-    enabled: !!dateKey,
+    enabled: isFirebaseConfigured && !!dateKey,
   });
 };
 
@@ -137,6 +139,41 @@ export const useCreateBookingMutation = () => {
     },
     onSettled: () => {
       // Always refetch after error or success to ensure we have the latest data
+      queryClient.invalidateQueries({ queryKey: bookingKeys.all });
+    },
+  });
+};
+
+/**
+ * Hook to delete a booking
+ */
+export const useDeleteBookingMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (bookingId: string) => bookingsApi.deleteBooking(bookingId),
+    onMutate: async (bookingId) => {
+      await queryClient.cancelQueries({ queryKey: bookingKeys.all });
+
+      const previousBookings = queryClient.getQueryData<Booking[]>(
+        bookingKeys.list()
+      );
+
+      queryClient.setQueryData<Booking[]>(bookingKeys.list(), (old = []) =>
+        old.filter((booking) => booking.id !== bookingId)
+      );
+
+      return { previousBookings };
+    },
+    onError: (_err, _bookingId, context) => {
+      if (context?.previousBookings) {
+        queryClient.setQueryData(
+          bookingKeys.list(),
+          context.previousBookings
+        );
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: bookingKeys.all });
     },
   });
