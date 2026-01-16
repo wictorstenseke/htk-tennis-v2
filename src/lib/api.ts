@@ -263,6 +263,7 @@ export const usersApi = {
       if (typeof updates.displayName === "string") {
         updateData.displayName = updates.displayName;
       }
+      // Use Object.hasOwn to distinguish between setting phone to empty string (update with deleteField) vs not including it in updates
       if (Object.hasOwn(updates, "phone")) {
         updateData.phone =
           typeof updates.phone === "string" ? updates.phone : deleteField();

@@ -78,6 +78,7 @@ export const Admin = () => {
 
   useEffect(() => {
     if (announcement) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Initialize form from loaded announcement
       setAnnouncementForm({
         title: announcement.title,
         body: announcement.body,
@@ -85,8 +86,7 @@ export const Admin = () => {
         links: announcement.links || [],
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [announcement?.title, announcement?.body, announcement?.enabled]);
+  }, [announcement]);
 
   const handleBookingsToggle = async (enabled: boolean) => {
     try {

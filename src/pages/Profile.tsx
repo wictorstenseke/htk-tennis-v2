@@ -24,14 +24,14 @@ export const Profile = () => {
 
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Initialize form from loaded user data
       setFormData({
         displayName: user.displayName || "",
         phone: user.phone || "",
       });
       setHasChanges(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
+  }, [user]);
 
   const handleDisplayNameChange = (value: string) => {
     setFormData((prev) => ({ ...prev, displayName: value }));
@@ -80,7 +80,7 @@ export const Profile = () => {
       <div>
         <h1 className="text-3xl font-bold">Profil</h1>
         <p className="text-muted-foreground">
-          Redigera din visningsnamn och telefonnummer
+          Redigera ditt visningsnamn och telefonnummer
         </p>
       </div>
 
