@@ -7,6 +7,7 @@ import {
   orderBy,
   query,
   Timestamp,
+  updateDoc,
 } from "firebase/firestore";
 
 import { db } from "./firebase";
@@ -200,6 +201,7 @@ const normalizeBookingFromFirestore = (
   const startDateField = data.startDate || data.startAt || data.startTime;
   const endDateField = data.endDate || data.endAt || data.endTime;
   const createdAtField = data.createdAt || data.created_at;
+  const ladderStatusField = data.ladderStatus;
 
   let startDateISO = "";
   let endDateISO = "";
@@ -244,12 +246,28 @@ const normalizeBookingFromFirestore = (
         ? ""
         : String(data.userId);
 
+  const playerAId =
+    typeof data.playerAId === "string" ? data.playerAId : undefined;
+  const playerBId =
+    typeof data.playerBId === "string" ? data.playerBId : undefined;
+  const ladderStatus =
+    ladderStatusField === "planned" || ladderStatusField === "completed"
+      ? ladderStatusField
+      : undefined;
+  const winnerId = typeof data.winnerId === "string" ? data.winnerId : undefined;
+  const comment = typeof data.comment === "string" ? data.comment : undefined;
+
   return {
     id: docId,
     userId,
     startDate: startDateISO,
     endDate: endDateISO,
     createdAt: createdAtISO || new Date().toISOString(),
+    playerAId,
+    playerBId,
+    ladderStatus,
+    winnerId,
+    comment,
   };
 };
 
@@ -311,6 +329,16 @@ export const bookingsApi = {
   },
 
   /**
+   * Get ladder matches from bookings.
+   */
+  getLadderMatches: async (): Promise<Booking[]> => {
+    const bookings = await bookingsApi.getBookings();
+    return bookings.filter(
+      (booking) => booking.playerAId && booking.playerBId
+    );
+  },
+
+  /**
    * Get bookings for a specific date (YYYY-MM-DD format)
    */
   getBookingsByDate: async (dateKey: string): Promise<Booking[]> => {
@@ -343,6 +371,7 @@ export const bookingsApi = {
           let startDateISO = "";
           let endDateISO = "";
           let createdAtISO = "";
+          const ladderStatusField = data.ladderStatus;
 
           // Handle startDate
           if (startDateField instanceof Timestamp) {
@@ -382,6 +411,17 @@ export const bookingsApi = {
             startDate: startDateISO,
             endDate: endDateISO,
             createdAt: createdAtISO,
+            playerAId:
+              typeof data.playerAId === "string" ? data.playerAId : undefined,
+            playerBId:
+              typeof data.playerBId === "string" ? data.playerBId : undefined,
+            ladderStatus:
+              ladderStatusField === "planned" || ladderStatusField === "completed"
+                ? ladderStatusField
+                : undefined,
+            winnerId:
+              typeof data.winnerId === "string" ? data.winnerId : undefined,
+            comment: typeof data.comment === "string" ? data.comment : undefined,
           };
         })
         .filter((booking): booking is Booking => booking !== null);
@@ -470,6 +510,17 @@ export const bookingsApi = {
         startDate: Timestamp.fromDate(startDate),
         endDate: Timestamp.fromDate(endDate),
         createdAt: Timestamp.now(),
+        ...(typeof data.playerAId === "string" && data.playerAId !== ""
+          ? { playerAId: data.playerAId }
+          : {}),
+        ...(typeof data.playerBId === "string" && data.playerBId !== ""
+          ? { playerBId: data.playerBId }
+          : {}),
+        ...(data.ladderStatus ? { ladderStatus: data.ladderStatus } : {}),
+        ...(typeof data.winnerId === "string" && data.winnerId !== ""
+          ? { winnerId: data.winnerId }
+          : {}),
+        ...(typeof data.comment === "string" ? { comment: data.comment } : {}),
       };
 
       const docRef = await addDoc(bookingsCollection, bookingData);
@@ -480,11 +531,75 @@ export const bookingsApi = {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         createdAt: new Date().toISOString(),
+        playerAId: data.playerAId,
+        playerBId: data.playerBId,
+        ladderStatus: data.ladderStatus,
+        winnerId: data.winnerId,
+        comment: data.comment,
       };
     } catch (error) {
       console.error("Error creating booking:", error);
       throw new ApiException(
         error instanceof Error ? error.message : "Failed to create booking",
+        0
+      );
+    }
+  },
+
+  /**
+   * Update ladder match metadata for an existing booking.
+   */
+  updateLadderMatch: async (
+    bookingId: string,
+    updates: Partial<
+      Pick<
+        Booking,
+        "ladderStatus" | "winnerId" | "comment" | "playerAId" | "playerBId"
+      >
+    >
+  ): Promise<
+    Pick<Booking, "id"> &
+      Partial<
+        Pick<
+          Booking,
+          "ladderStatus" | "winnerId" | "comment" | "playerAId" | "playerBId"
+        >
+      >
+  > => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", 0);
+      }
+
+      const updateData: Record<string, unknown> = {};
+      if (updates.ladderStatus) {
+        updateData.ladderStatus = updates.ladderStatus;
+      }
+      if (typeof updates.winnerId === "string") {
+        updateData.winnerId = updates.winnerId;
+      }
+      if (typeof updates.comment === "string") {
+        updateData.comment = updates.comment;
+      }
+      if (typeof updates.playerAId === "string") {
+        updateData.playerAId = updates.playerAId;
+      }
+      if (typeof updates.playerBId === "string") {
+        updateData.playerBId = updates.playerBId;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return { id: bookingId, ...updates };
+      }
+
+      const bookingRef = doc(db, "bookings", bookingId);
+      await updateDoc(bookingRef, updateData);
+
+      return { id: bookingId, ...updates };
+    } catch (error) {
+      console.error("Error updating ladder match:", error);
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to update ladder match",
         0
       );
     }

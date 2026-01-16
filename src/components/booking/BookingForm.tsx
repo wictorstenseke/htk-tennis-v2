@@ -34,7 +34,7 @@ import {
   InlineTimeWheelPicker,
 } from "./DateTimeWheelPicker";
 
-import type { Booking } from "@/types/api";
+import type { Booking, CreateBookingInput } from "@/types/api";
 
 const formatDateTime = (date: Date): string => {
   const dayNames = ["sön", "mån", "tis", "ons", "tors", "fre", "lör"];
@@ -71,11 +71,16 @@ const formatTime = (date: Date): string => {
 interface BookingFormProps {
   triggerLabel?: string;
   onBookingCreated?: (booking: Booking) => void;
+  bookingMetadata?: Pick<
+    CreateBookingInput,
+    "playerAId" | "playerBId" | "ladderStatus" | "winnerId" | "comment"
+  >;
 }
 
 export const BookingForm = ({
   triggerLabel = "Boka match",
   onBookingCreated,
+  bookingMetadata,
 }: BookingFormProps) => {
   const { user } = useAuth();
   const isMobile = useMediaQuery("(max-width: 640px)");
@@ -162,6 +167,7 @@ export const BookingForm = ({
         userId: user.uid,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
+        ...bookingMetadata,
       },
       {
         onSuccess: (booking) => {

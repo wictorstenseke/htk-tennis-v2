@@ -59,6 +59,8 @@ export interface User {
   createdAt?: string;
 }
 
+export type LadderStatus = "planned" | "completed";
+
 // Booking entity (from Firestore)
 export interface Booking {
   id: string;
@@ -66,10 +68,20 @@ export interface Booking {
   startDate: string; // ISO datetime
   endDate: string; // ISO datetime
   createdAt: string; // ISO datetime
+  playerAId?: string;
+  playerBId?: string;
+  ladderStatus?: LadderStatus;
+  winnerId?: string;
+  comment?: string;
 }
 
 export interface CreateBookingInput {
   userId: string;
   startDate: string; // ISO datetime string
   endDate: string; // ISO datetime string
+  playerAId?: string;
+  playerBId?: string;
+  ladderStatus?: LadderStatus;
+  winnerId?: string;
+  comment?: string;
 }

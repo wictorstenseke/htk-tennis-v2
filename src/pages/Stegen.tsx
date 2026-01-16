@@ -21,7 +21,11 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
-import { useDeleteBookingMutation } from "@/hooks/useBookings";
+import {
+  useDeleteLadderMatchMutation,
+  useLadderMatchesQuery,
+  useUpdateLadderMatchMutation,
+} from "@/hooks/useLadderMatches";
 import { useUsersQuery } from "@/hooks/useUsers";
 import {
   applyLadderResult,
@@ -41,7 +45,6 @@ interface ReportDraft {
 }
 
 const emptyDraft: ReportDraft = { comment: "" };
-const matchIdPrefix = "match";
 
 const challengeReasonMessages: Record<ChallengeReason, string> = {
   self: "Du kan inte utmana dig själv.",
@@ -70,34 +73,19 @@ const formatMatchDate = (start: string, end?: string): string => {
   return `${dateLabel} ${startTime}${endTime ? `–${endTime}` : ""}`;
 };
 
-const createMatchId = (): string => {
-  if (typeof crypto !== "undefined") {
-    const cryptoObj = crypto as Crypto;
-
-    if ("randomUUID" in cryptoObj && typeof cryptoObj.randomUUID === "function") {
-      return cryptoObj.randomUUID();
-    }
-
-    if ("getRandomValues" in cryptoObj && typeof cryptoObj.getRandomValues === "function") {
-      const bytes = new Uint8Array(16);
-      cryptoObj.getRandomValues(bytes);
-      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
-        ""
-      );
-    }
-  }
-
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-};
-
 export const Stegen = () => {
   const { user } = useAuth();
   const { data: users, isLoading, error } = useUsersQuery();
-  const deleteBookingMutation = useDeleteBookingMutation();
+  const {
+    data: ladderMatches = [],
+    isLoading: matchesLoading,
+    error: matchesError,
+  } = useLadderMatchesQuery();
+  const deleteLadderMatchMutation = useDeleteLadderMatchMutation();
+  const updateLadderMatchMutation = useUpdateLadderMatchMutation();
   const [ladderOverride, setLadderOverride] = useState<LadderPlayer[] | null>(
     null
   );
-  const [matches, setMatches] = useState<LadderMatch[]>([]);
   const [selectedOpponent, setSelectedOpponent] = useState<LadderPlayer | null>(
     null
   );
@@ -142,7 +130,10 @@ export const Stegen = () => {
     currentPlayerId !== ""
       ? ladder.findIndex((player) => player.id === currentPlayerId)
       : -1;
-  const plannedMatches = matches.filter((match) => match.status === "planned");
+  const plannedMatches = ladderMatches.filter(
+    (match) => match.status === "planned"
+  );
+  const isContentLoading = isLoading || matchesLoading;
 
   const handleSelectOpponent = (opponent: LadderPlayer) => {
     if (!user) {
@@ -166,25 +157,12 @@ export const Stegen = () => {
     setSelectedOpponent(opponent);
   };
 
-  const handleBookingCreated = (booking: Booking) => {
+  const handleBookingCreated = (_booking: Booking) => {
     if (!selectedOpponent || !user) {
       return;
     }
-
-    const newMatch: LadderMatch = {
-      id: `${matchIdPrefix}-${createMatchId()}`,
-      playerAId: user.uid,
-      playerBId: selectedOpponent.id,
-      bookingId: booking.id,
-      bookingStart: booking.startDate,
-      bookingEnd: booking.endDate,
-      status: "planned",
-    };
-
-    setMatches((current) => [newMatch, ...current]);
     setSelectedOpponent(null);
     setChallengeMessage(null);
-    toast.success("Utmaning skapad och match bokad.");
   };
 
   const handleReportWinnerChange = (matchId: string, winnerId: string) => {
@@ -212,28 +190,38 @@ export const Stegen = () => {
 
     const loserId =
       winnerId === match.playerAId ? match.playerBId : match.playerAId;
+    const bookingId = match.bookingId ?? match.id;
 
-    setLadderOverride((current) =>
-      applyLadderResult(current ?? basePlayers, winnerId, loserId)
+    updateLadderMatchMutation.mutate(
+      {
+        bookingId,
+        updates: {
+          ladderStatus: "completed",
+          winnerId,
+          comment: draft.comment?.trim() || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          setLadderOverride((current) =>
+            applyLadderResult(current ?? basePlayers, winnerId, loserId)
+          );
+          setReportDrafts((current) => {
+            const updated = { ...current };
+            delete updated[match.id];
+            return updated;
+          });
+          toast.success("Resultatet är rapporterat och stegen är uppdaterad.");
+        },
+        onError: (error) => {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Kunde inte rapportera resultatet."
+          );
+        },
+      }
     );
-    setMatches((current) =>
-      current.map((item) =>
-        item.id === match.id
-          ? {
-              ...item,
-              status: "completed",
-              winnerId,
-              comment: draft.comment?.trim() || undefined,
-            }
-          : item
-      )
-    );
-    setReportDrafts((current) => {
-      const updated = { ...current };
-      delete updated[match.id];
-      return updated;
-    });
-    toast.success("Resultatet är rapporterat och stegen är uppdaterad.");
   };
 
   const handleCancelMatch = (match: LadderMatch) => {
@@ -242,19 +230,14 @@ export const Stegen = () => {
     }
 
     const clearMatch = () => {
-      setMatches((current) => current.filter((item) => item.id !== match.id));
       setCancelingMatchId(null);
     };
 
     setCancelingMatchId(match.id);
 
-    if (!match.bookingId) {
-      clearMatch();
-      toast.success("Matchen är avbokad.");
-      return;
-    }
+    const bookingId = match.bookingId ?? match.id;
 
-    deleteBookingMutation.mutate(match.bookingId, {
+    deleteLadderMatchMutation.mutate(bookingId, {
       onSuccess: () => {
         clearMatch();
         toast.success("Matchen är avbokad och bokningen är borttagen.");
@@ -270,7 +253,7 @@ export const Stegen = () => {
     });
   };
 
-  if (isLoading) {
+  if (isContentLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Spinner className="h-8 w-8" />
@@ -303,6 +286,18 @@ export const Stegen = () => {
             {error instanceof Error
               ? error.message
               : "Ett fel uppstod vid hämtning av spelare."}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {matchesError && (
+        <Alert variant="destructive">
+          <AlertCircle />
+          <AlertTitle>Fel vid laddning av stegen-matcher</AlertTitle>
+          <AlertDescription>
+            {matchesError instanceof Error
+              ? matchesError.message
+              : "Ett fel uppstod vid hämtning av matcher."}
           </AlertDescription>
         </Alert>
       )}
@@ -410,6 +405,11 @@ export const Stegen = () => {
               <BookingForm
                 triggerLabel={`Boka match mot ${selectedOpponent.name}`}
                 onBookingCreated={handleBookingCreated}
+                bookingMetadata={{
+                  playerAId: user.uid,
+                  playerBId: selectedOpponent.id,
+                  ladderStatus: "planned",
+                }}
               />
               <Button
                 variant="outline"
