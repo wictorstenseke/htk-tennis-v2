@@ -38,7 +38,8 @@ export const mockLadderPlayers: LadderPlayer[] = [
 ];
 
 const getPlayerName = (user: User | AuthUser): string => {
-  return user.displayName || user.email?.split("@")[0] || "Spelare";
+  const email = typeof user.email === "string" ? user.email : "";
+  return user.displayName || email.split("@")[0] || "Spelare";
 };
 
 export const buildLadderPlayers = (
@@ -51,7 +52,7 @@ export const buildLadderPlayers = (
           id: user.uid,
           name: getPlayerName(user),
         }))
-      : [...mockLadderPlayers];
+      : mockLadderPlayers;
 
   const sortedPlayers = [...mappedUsers].sort((a, b) =>
     a.name.localeCompare(b.name, "sv")

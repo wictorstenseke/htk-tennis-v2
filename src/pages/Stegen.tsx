@@ -149,7 +149,7 @@ export const Stegen = () => {
     }
 
     const newMatch: LadderMatch = {
-      id: `match-${Date.now()}`,
+      id: `match-${crypto.randomUUID()}`,
       playerAId: user.uid,
       playerBId: selectedOpponent.id,
       bookingId: booking.id,
@@ -185,11 +185,17 @@ export const Stegen = () => {
       return;
     }
 
+    const winnerId = draft.winnerId;
+    if (!winnerId) {
+      toast.error("Välj vinnare innan du rapporterar resultatet.");
+      return;
+    }
+
     const loserId =
-      draft.winnerId === match.playerAId ? match.playerBId : match.playerAId;
+      winnerId === match.playerAId ? match.playerBId : match.playerAId;
 
     setLadderOverride((current) =>
-      applyLadderResult(current ?? basePlayers, draft.winnerId ?? "", loserId)
+      applyLadderResult(current ?? basePlayers, winnerId, loserId)
     );
     setMatches((current) =>
       current.map((item) =>
@@ -197,7 +203,7 @@ export const Stegen = () => {
           ? {
               ...item,
               status: "completed",
-              winnerId: draft.winnerId,
+              winnerId,
               comment: draft.comment?.trim() || undefined,
             }
           : item
