@@ -94,6 +94,11 @@ export const useCreateBookingMutation = () => {
         startDate: newBooking.startDate,
         endDate: newBooking.endDate,
         createdAt: new Date().toISOString(),
+        playerAId: newBooking.playerAId,
+        playerBId: newBooking.playerBId,
+        ladderStatus: newBooking.ladderStatus,
+        winnerId: newBooking.winnerId,
+        comment: newBooking.comment,
       };
 
       queryClient.setQueryData<Booking[]>(bookingKeys.list(), (old = []) => {

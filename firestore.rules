@@ -22,10 +22,37 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superuser'];
     }
 
-    // DEV MODE: allow full read/write access to all documents
-    // WARNING: This is NOT safe for production. Lock this down before going live.
-    match /{document=**} {
-      allow read, write: if true;
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Bookings collection - authenticated users can manage bookings
+    match /bookings/{bookingId} {
+      // Allow authenticated users to read all bookings (needed for calendar view)
+      allow read: if isAuthenticated();
+
+      // Allow authenticated users to create bookings with required fields
+      allow create: if isAuthenticated()
+        && request.resource.data.userId is string
+        && request.resource.data.startDate is timestamp
+        && request.resource.data.endDate is timestamp
+        && request.resource.data.createdAt is timestamp
+        // Ladder match fields are optional
+        && (!('playerAId' in request.resource.data) || request.resource.data.playerAId is string)
+        && (!('playerBId' in request.resource.data) || request.resource.data.playerBId is string)
+        && (!('ladderStatus' in request.resource.data) || request.resource.data.ladderStatus in ['planned', 'completed'])
+        && (!('winnerId' in request.resource.data) || request.resource.data.winnerId is string)
+        && (!('comment' in request.resource.data) || request.resource.data.comment is string);
+
+      // Allow users to update their own bookings
+      allow update: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+
+      // Allow users to delete their own bookings
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
     }
   }
 }

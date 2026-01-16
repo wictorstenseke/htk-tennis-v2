@@ -1,5 +1,5 @@
 import type { User as AuthUser } from "@/lib/auth";
-import type { User } from "@/types/api";
+import type { Booking, User } from "@/types/api";
 
 export interface LadderPlayer {
   id: string;
@@ -127,4 +127,22 @@ export const applyLadderResult = (
   const [winner] = updated.splice(winnerIndex, 1);
   updated.splice(loserIndex, 0, winner);
   return updated;
+};
+
+export const bookingToLadderMatch = (booking: Booking): LadderMatch | null => {
+  if (!booking.playerAId || !booking.playerBId) {
+    return null;
+  }
+
+  return {
+    id: booking.id,
+    playerAId: booking.playerAId,
+    playerBId: booking.playerBId,
+    bookingId: booking.id,
+    bookingStart: booking.startDate,
+    bookingEnd: booking.endDate,
+    status: booking.ladderStatus ?? "planned",
+    winnerId: booking.winnerId,
+    comment: booking.comment,
+  };
 };

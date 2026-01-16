@@ -303,6 +303,12 @@ The app expects a `users` collection in Firestore with documents containing:
 
 Documents are identified by the Firebase Auth UID as the document ID.
 
+### Remaining Firebase Setup & Metadata
+
+- Create the `bookings` collection indexes for `startDate` (ascending/descending) as outlined in `docs/booking-data-structure.md`.
+- Ensure booking documents can store ladder metadata (`playerAId`, `playerBId`, `ladderStatus`, `winnerId`, `comment`).
+- Update Firestore security rules to allow ladder match fields for authorized users.
+
 ## 🎯 Layout System
 
 The `AppShell` component provides:
