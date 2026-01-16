@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { XIcon } from "lucide-react";
+import { AlertCircle, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -68,7 +68,7 @@ const formatTime = (date: Date): string => {
 
 export const BookingForm = () => {
   const { user } = useAuth();
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 640px)");
   const { data: users } = useUsersQuery();
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState(() => {
@@ -92,10 +92,8 @@ export const BookingForm = () => {
     null
   );
 
-  const {
-    data: availabilityData,
-    isLoading: isCheckingAvailability,
-  } = useCheckAvailability(startDate, endDate);
+  const { data: availabilityData, isLoading: isCheckingAvailability } =
+    useCheckAvailability(startDate, endDate);
 
   const createBookingMutation = useCreateBookingMutation();
 
@@ -171,10 +169,10 @@ export const BookingForm = () => {
   };
 
   const bookingContent = (
-    <div className="space-y-4 px-4 pb-8">
+    <div className={cn("space-y-4 pb-8", isMobile && "px-4")}>
       <div>
         <div
-          className="flex cursor-pointer items-center justify-between pb-3 transition-colors hover:text-primary"
+          className="flex cursor-pointer items-center justify-between pb-3 transition-colors group"
           onClick={() =>
             setVisiblePicker(visiblePicker === "start" ? null : "start")
           }
@@ -189,7 +187,9 @@ export const BookingForm = () => {
           aria-label="Select start date and time"
         >
           <span className="text-sm">Starttid</span>
-          <span className="text-sm">{formatDateTime(startDate)}</span>
+          <span className="text-sm text-primary underline-offset-4 group-hover:text-primary group-hover:underline">
+            {formatDateTime(startDate)}
+          </span>
         </div>
         <div
           className={cn(
@@ -211,7 +211,7 @@ export const BookingForm = () => {
 
       <div>
         <div
-          className="flex cursor-pointer items-center justify-between pb-3 transition-colors hover:text-primary"
+          className="flex cursor-pointer items-center justify-between pb-3 transition-colors group"
           onClick={() =>
             setVisiblePicker(visiblePicker === "end" ? null : "end")
           }
@@ -226,7 +226,9 @@ export const BookingForm = () => {
           aria-label="Select end date and time"
         >
           <span className="text-sm">Sluttid</span>
-          <span className="text-sm">{formatDateTime(endDate)}</span>
+          <span className="text-sm text-primary underline-offset-4 group-hover:text-primary group-hover:underline">
+            {formatDateTime(endDate)}
+          </span>
         </div>
         <div
           className={cn(
@@ -258,11 +260,13 @@ export const BookingForm = () => {
             </div>
             <div className="flex flex-wrap gap-2">
               {availabilityData.conflictingBookings.map((booking) => {
-                const userName = userMap.get(booking.userId) || "Okänd användare";
+                const userName =
+                  userMap.get(booking.userId) || "Okänd användare";
                 const startTime = formatTime(new Date(booking.startDate));
                 const endTime = formatTime(new Date(booking.endDate));
                 return (
-                  <Badge key={booking.id} variant="default">
+                  <Badge key={booking.id} variant="outline">
+                    <AlertCircle className="h-3 w-3" />
                     {userName} {startTime}-{endTime}
                   </Badge>
                 );
@@ -292,7 +296,7 @@ export const BookingForm = () => {
           <Button size="lg">Boka match</Button>
         </DrawerTrigger>
         <DrawerContent>
-          <DrawerClose className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 z-50 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+          <DrawerClose className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 z-50 cursor-pointer rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
             <XIcon className="h-5 w-5" />
             <span className="sr-only">Close</span>
           </DrawerClose>

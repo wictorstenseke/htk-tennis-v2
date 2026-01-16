@@ -49,7 +49,7 @@ describe("Landing", () => {
       renderWithQueryClient(<Landing />);
 
       expect(
-        screen.getByRole("heading", { name: /welcome to htk tennis/i })
+        screen.getByRole("heading", { name: /välkommen till htk tennis/i })
       ).toBeInTheDocument();
     });
 
@@ -57,7 +57,7 @@ describe("Landing", () => {
       renderWithQueryClient(<Landing />);
 
       expect(
-        screen.getByText(/manage your tennis club with ease/i)
+        screen.getByText(/hantera din tennisklubb med lätthet/i)
       ).toBeInTheDocument();
     });
 
@@ -65,7 +65,15 @@ describe("Landing", () => {
       renderWithQueryClient(<Landing />);
 
       expect(
-        screen.getByRole("button", { name: /sign in/i })
+        screen.getByRole("button", { name: /logga in/i })
+      ).toBeInTheDocument();
+    });
+
+    it("renders create account button", () => {
+      renderWithQueryClient(<Landing />);
+
+      expect(
+        screen.getByRole("button", { name: /skapa konto/i })
       ).toBeInTheDocument();
     });
 

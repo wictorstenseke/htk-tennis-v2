@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 
-import { LogOutIcon, UserIcon } from "lucide-react";
+import { HomeIcon, CalendarIcon, LogOutIcon, UserIcon, Menu } from "lucide-react";
 
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import { AuthDialog } from "@/components/auth/AuthDialog";
 import { ModeToggle } from "@/components/mode-toggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +17,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import { signOut } from "@/lib/auth";
 
@@ -49,70 +57,180 @@ export function AppShell({ children }: AppShellProps) {
     }
   };
 
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "User";
+  const initials = displayName.slice(0, 2).toUpperCase();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="container mx-auto flex h-14 max-w-screen-2xl items-center justify-between gap-2 overflow-hidden px-2 sm:px-4 md:px-6 lg:px-8">
-          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
-            <Link to="/" className="flex shrink-0 items-center space-x-2">
-              <span className="font-bold text-sm sm:text-base">My App</span>
-            </Link>
-            <nav className="hidden items-center gap-3 text-sm font-medium sm:flex sm:gap-6">
-              <Link
-                to="/"
-                className="transition-colors hover:text-foreground/80"
-                activeProps={{ className: "text-foreground" }}
-                inactiveProps={{ className: "text-foreground/60" }}
-              >
-                Home
+      <header className="w-full border-b bg-background py-4">
+        <div className="container mx-auto max-w-screen-2xl px-2 sm:px-4 md:px-6 lg:px-8">
+          {/* Desktop Menu */}
+          <nav className="hidden items-center justify-between lg:flex">
+            <div className="flex items-center gap-6">
+              {/* Logo */}
+              <Link to="/" className="flex items-center gap-2">
+                <span className="text-lg font-semibold tracking-tighter">
+                  HTK Tennis
+                </span>
               </Link>
-              <Link
-                to="/app"
-                onClick={handleAppClick}
-                className="transition-colors hover:text-foreground/80"
-                activeProps={{ className: "text-foreground" }}
-                inactiveProps={{ className: "text-foreground/60" }}
-              >
-                App
+              {/* Desktop Nav Links */}
+              <div className="flex items-center gap-6">
+                <Link
+                  to="/"
+                  className="inline-flex h-10 items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-accent-foreground"
+                  activeProps={{ className: "bg-muted text-accent-foreground" }}
+                >
+                  <HomeIcon className="mr-2 h-4 w-4" />
+                  Hem
+                </Link>
+                <Link
+                  to="/app"
+                  onClick={handleAppClick}
+                  className="inline-flex h-10 items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-accent-foreground"
+                  activeProps={{ className: "bg-muted text-accent-foreground" }}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  Boka
+                </Link>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {!loading && (
+                <>
+                  {user ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="gap-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.photoURL || undefined} alt={displayName} />
+                            <AvatarFallback>{initials}</AvatarFallback>
+                          </Avatar>
+                          <span className="hidden truncate sm:inline">{displayName}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel className="truncate">
+                          {user.email}
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                          <UserIcon className="mr-2 h-4 w-4" />
+                          Profil
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleSignOut}>
+                          <LogOutIcon className="mr-2 h-4 w-4" />
+                          Logga ut
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAuthDialogOpen(true)}
+                    >
+                      Logga in
+                    </Button>
+                  )}
+                </>
+              )}
+              <ModeToggle />
+            </div>
+          </nav>
+
+          {/* Mobile Menu */}
+          <div className="block lg:hidden">
+            <div className="flex items-center justify-between">
+              {/* Logo */}
+              <Link to="/" className="flex items-center gap-2">
+                <span className="text-lg font-semibold tracking-tighter">
+                  HTK Tennis
+                </span>
               </Link>
-            </nav>
-          </div>
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            {!loading && (
-              <>
-                {user ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-1 sm:gap-2">
-                        <UserIcon className="h-4 w-4 shrink-0" />
-                        <span className="hidden truncate sm:inline">{user.email}</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel className="truncate max-w-[200px]">
-                        {user.email}
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleSignOut}>
-                        <LogOutIcon />
-                        Sign Out
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
+              <div className="flex items-center gap-2">
+                {!loading && !user && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setAuthDialogOpen(true)}
-                    className="text-xs sm:text-sm"
                   >
-                    Sign In
+                    Logga in
                   </Button>
                 )}
-              </>
-            )}
-            <ModeToggle />
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Menu className="h-4 w-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent className="overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle>
+                        <Link to="/" className="flex items-center gap-2">
+                          <span className="text-lg font-semibold tracking-tighter">
+                            HTK Tennis
+                          </span>
+                        </Link>
+                      </SheetTitle>
+                    </SheetHeader>
+                    <div className="flex flex-col gap-6 p-4">
+                      <nav className="flex flex-col gap-4">
+                        <Link
+                          to="/"
+                          className="flex items-center gap-2 text-md font-semibold"
+                        >
+                          <HomeIcon className="h-4 w-4" />
+                          Hem
+                        </Link>
+                        <Link
+                          to="/app"
+                          onClick={handleAppClick}
+                          className="flex items-center gap-2 text-md font-semibold"
+                        >
+                          <CalendarIcon className="h-4 w-4" />
+                          Boka
+                        </Link>
+                      </nav>
+
+                      {!loading && user && (
+                        <div className="flex flex-col gap-3 border-t pt-4">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={user.photoURL || undefined} alt={displayName} />
+                              <AvatarFallback>{initials}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold">{displayName}</span>
+                              <span className="text-xs text-muted-foreground truncate">
+                                {user.email}
+                              </span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start"
+                            onClick={() => {}}
+                          >
+                            <UserIcon className="mr-2 h-4 w-4" />
+                            Profil
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start"
+                            onClick={handleSignOut}
+                          >
+                            <LogOutIcon className="mr-2 h-4 w-4" />
+                            Logga ut
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
           </div>
         </div>
       </header>
