@@ -8,6 +8,9 @@ export interface LadderPlayer {
 
 export type ChallengeReason = "self" | "lower-ranked" | "too-far" | "missing";
 
+const fallbackPlayerName = "Spelare";
+const maxChallengeDistance = 4;
+
 export interface ChallengeStatus {
   eligible: boolean;
   reason?: ChallengeReason;
@@ -40,7 +43,7 @@ export const mockLadderPlayers: LadderPlayer[] = [
 const getPlayerName = (user: User | AuthUser): string => {
   const email = typeof user.email === "string" ? user.email.trim() : "";
   const emailName = email ? email.split("@")[0] : "";
-  return user.displayName || emailName || "Spelare";
+  return user.displayName || emailName || fallbackPlayerName;
 };
 
 export const buildLadderPlayers = (
@@ -97,7 +100,7 @@ export const getChallengeStatus = (
     return { eligible: false, reason: "lower-ranked" };
   }
 
-  if (positionDifference > 4) {
+  if (positionDifference > maxChallengeDistance) {
     return { eligible: false, reason: "too-far" };
   }
 

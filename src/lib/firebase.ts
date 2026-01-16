@@ -16,6 +16,7 @@ export const isFirebaseConfigured = Object.values(firebaseConfig).every(
   (value) =>
     typeof value === "string" &&
     value.trim().length > 0 &&
+    // Ignore placeholder values from .env.example (e.g. "your_api_key_here")
     !value.includes("your_")
 );
 

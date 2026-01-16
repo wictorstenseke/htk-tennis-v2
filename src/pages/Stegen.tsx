@@ -41,6 +41,7 @@ interface ReportDraft {
 }
 
 const emptyDraft: ReportDraft = { comment: "" };
+const matchIdPrefix = "match";
 
 const challengeReasonMessages: Record<ChallengeReason, string> = {
   self: "Du kan inte utmana dig själv.",
@@ -70,8 +71,18 @@ const formatMatchDate = (start: string, end?: string): string => {
 };
 
 const createMatchId = (): string => {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
+  if (typeof crypto !== "undefined") {
+    if ("randomUUID" in crypto) {
+      return crypto.randomUUID();
+    }
+
+    if ("getRandomValues" in crypto) {
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+        ""
+      );
+    }
   }
 
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -159,7 +170,7 @@ export const Stegen = () => {
     }
 
     const newMatch: LadderMatch = {
-      id: `match-${createMatchId()}`,
+      id: `${matchIdPrefix}-${createMatchId()}`,
       playerAId: user.uid,
       playerBId: selectedOpponent.id,
       bookingId: booking.id,
