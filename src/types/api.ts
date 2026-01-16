@@ -56,6 +56,8 @@ export interface User {
   uid: string;
   email: string;
   displayName?: string;
+  phone?: string;
+  role?: "admin" | "superuser";
   createdAt?: string;
 }
 
@@ -84,4 +86,17 @@ export interface CreateBookingInput {
   ladderStatus?: LadderStatus;
   winnerId?: string;
   comment?: string;
+}
+
+// App settings entity (from Firestore)
+export interface AppSettings {
+  bookingsEnabled: boolean;
+}
+
+// Announcement entity (from Firestore)
+export interface Announcement {
+  title: string;
+  body: string;
+  enabled: boolean;
+  links?: Array<{ label: string; url: string }>;
 }
