@@ -75,12 +75,14 @@ interface BookingFormProps {
     CreateBookingInput,
     "playerAId" | "playerBId" | "ladderStatus" | "winnerId" | "comment"
   >;
+  successMessage?: string;
 }
 
 export const BookingForm = ({
   triggerLabel = "Boka match",
   onBookingCreated,
   bookingMetadata,
+  successMessage = "Match bokad",
 }: BookingFormProps) => {
   const { user } = useAuth();
   const isMobile = useMediaQuery("(max-width: 640px)");
@@ -172,7 +174,7 @@ export const BookingForm = ({
       {
         onSuccess: (booking) => {
           // Show success toast only after server confirms
-          toast.success("Match bokad");
+          toast.success(successMessage);
           onBookingCreated?.(booking);
         },
         onError: (error) => {

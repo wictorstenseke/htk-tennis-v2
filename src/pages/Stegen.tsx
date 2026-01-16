@@ -37,7 +37,6 @@ import {
 } from "@/lib/ladder";
 import { cn } from "@/lib/utils";
 
-import type { Booking } from "@/types/api";
 
 interface ReportDraft {
   winnerId?: string;
@@ -157,7 +156,7 @@ export const Stegen = () => {
     setSelectedOpponent(opponent);
   };
 
-  const handleBookingCreated = (_booking: Booking) => {
+  const handleBookingCreated = () => {
     if (!selectedOpponent || !user) {
       return;
     }
@@ -410,6 +409,7 @@ export const Stegen = () => {
                   playerBId: selectedOpponent.id,
                   ladderStatus: "planned",
                 }}
+                successMessage="Utmaning skapad och match bokad."
               />
               <Button
                 variant="outline"
