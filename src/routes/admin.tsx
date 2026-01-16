@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { usersApi } from "@/lib/api";
 import { canAccessAdmin } from "@/lib/admin";
+import { usersApi } from "@/lib/api";
 import { waitForAuthReady } from "@/lib/auth";
 import { Admin } from "@/pages/Admin";
 

@@ -38,8 +38,6 @@ import {
 import { mockedUsers } from "@/lib/mockedUsers";
 import { cn } from "@/lib/utils";
 
-import type { User } from "@/types/api";
-
 interface ReportDraft {
   winnerId?: string;
   comment: string;
