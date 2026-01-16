@@ -72,13 +72,15 @@ const formatMatchDate = (start: string, end?: string): string => {
 
 const createMatchId = (): string => {
   if (typeof crypto !== "undefined") {
-    if ("randomUUID" in crypto) {
-      return crypto.randomUUID();
+    const cryptoObj = crypto as Crypto;
+
+    if ("randomUUID" in cryptoObj && typeof cryptoObj.randomUUID === "function") {
+      return cryptoObj.randomUUID();
     }
 
-    if ("getRandomValues" in crypto) {
+    if ("getRandomValues" in cryptoObj && typeof cryptoObj.getRandomValues === "function") {
       const bytes = new Uint8Array(16);
-      crypto.getRandomValues(bytes);
+      cryptoObj.getRandomValues(bytes);
       return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
         ""
       );
