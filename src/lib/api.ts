@@ -576,13 +576,13 @@ export const bookingsApi = {
       if (updates.ladderStatus) {
         updateData.ladderStatus = updates.ladderStatus;
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "winnerId")) {
+      if (Object.hasOwn(updates, "winnerId")) {
         updateData.winnerId =
           typeof updates.winnerId === "string"
             ? updates.winnerId
             : deleteField();
       }
-      if (Object.prototype.hasOwnProperty.call(updates, "comment")) {
+      if (Object.hasOwn(updates, "comment")) {
         updateData.comment =
           typeof updates.comment === "string" ? updates.comment : deleteField();
       }

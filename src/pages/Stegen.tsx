@@ -156,7 +156,7 @@ export const Stegen = () => {
     setSelectedOpponent(opponent);
   };
 
-  const handleBookingCreated = () => {
+  const handleBookingSuccess = () => {
     if (!selectedOpponent || !user) {
       return;
     }
@@ -403,7 +403,7 @@ export const Stegen = () => {
               </div>
               <BookingForm
                 triggerLabel={`Boka match mot ${selectedOpponent.name}`}
-                onBookingCreated={handleBookingCreated}
+                onBookingCreated={handleBookingSuccess}
                 bookingMetadata={{
                   playerAId: user.uid,
                   playerBId: selectedOpponent.id,

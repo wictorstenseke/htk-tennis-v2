@@ -17,6 +17,29 @@ export const ladderMatchKeys = {
 const isLadderMatch = (match: LadderMatch | null): match is LadderMatch =>
   match !== null;
 
+const matchesAreEqual = (
+  cachedMatches: LadderMatch[] | undefined,
+  nextMatches: LadderMatch[]
+) => {
+  if (!cachedMatches || cachedMatches.length !== nextMatches.length) {
+    return false;
+  }
+
+  return cachedMatches.every((match, index) => {
+    const nextMatch = nextMatches[index];
+    return (
+      match.id === nextMatch.id &&
+      match.playerAId === nextMatch.playerAId &&
+      match.playerBId === nextMatch.playerBId &&
+      match.bookingStart === nextMatch.bookingStart &&
+      match.bookingEnd === nextMatch.bookingEnd &&
+      match.status === nextMatch.status &&
+      match.winnerId === nextMatch.winnerId &&
+      match.comment === nextMatch.comment
+    );
+  });
+};
+
 const buildLadderMatches = (bookings: Booking[] | undefined): LadderMatch[] =>
   (bookings ?? [])
     .map(bookingToLadderMatch)
@@ -39,7 +62,7 @@ export const useLadderMatchesQuery = () => {
     const cachedMatches = queryClient.getQueryData<LadderMatch[]>(
       ladderMatchKeys.list()
     );
-    if (cachedMatches !== ladderMatches) {
+    if (!matchesAreEqual(cachedMatches, ladderMatches)) {
       queryClient.setQueryData(ladderMatchKeys.list(), ladderMatches);
     }
   }, [queryClient, ladderMatches]);
@@ -54,8 +77,8 @@ const updateLadderMatchCache = (
   match: LadderMatch,
   updates: Partial<Pick<Booking, "ladderStatus" | "winnerId" | "comment">>
 ): LadderMatch => {
-  const hasWinnerId = Object.prototype.hasOwnProperty.call(updates, "winnerId");
-  const hasComment = Object.prototype.hasOwnProperty.call(updates, "comment");
+  const hasWinnerId = Object.hasOwn(updates, "winnerId");
+  const hasComment = Object.hasOwn(updates, "comment");
 
   return {
     ...match,
