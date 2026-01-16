@@ -25,7 +25,20 @@ service cloud.firestore {
     // Users collection
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.auth.uid == userId;
+
+      // Allow users to create/update their own document, but not modify the role field
+      allow create: if isAuthenticated()
+        && request.auth.uid == userId
+        && !('role' in request.resource.data);
+
+      allow update: if isAuthenticated()
+        && request.auth.uid == userId
+        && (
+          // User is updating their own data without touching role field
+          (!('role' in request.resource.data) && !('role' in resource.data))
+          || ('role' in request.resource.data && 'role' in resource.data && request.resource.data.role == resource.data.role)
+          || isSuperUser()
+        );
     }
 
     // Bookings collection - authenticated users can manage bookings
@@ -53,6 +66,24 @@ service cloud.firestore {
       // Allow users to delete their own bookings
       allow delete: if isAuthenticated()
         && resource.data.userId == request.auth.uid;
+    }
+
+    // App Settings collection - controls global app behavior
+    match /appSettings/{settingId} {
+      // All authenticated users can read settings (e.g., to check if bookings are enabled)
+      allow read: if isAuthenticated();
+
+      // Only admins and superusers can modify app settings
+      allow write: if isAdminOrSuperUser();
+    }
+
+    // Announcements collection - displays messages to users
+    match /announcements/{announcementId} {
+      // All authenticated users can read announcements
+      allow read: if isAuthenticated();
+
+      // Only admins and superusers can create/update announcements
+      allow write: if isAdminOrSuperUser();
     }
   }
 }
