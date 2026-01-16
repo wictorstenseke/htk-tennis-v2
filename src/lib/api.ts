@@ -2,6 +2,7 @@ import {
   addDoc,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDocs,
   orderBy,
@@ -575,11 +576,15 @@ export const bookingsApi = {
       if (updates.ladderStatus) {
         updateData.ladderStatus = updates.ladderStatus;
       }
-      if (typeof updates.winnerId === "string") {
-        updateData.winnerId = updates.winnerId;
+      if (Object.prototype.hasOwnProperty.call(updates, "winnerId")) {
+        updateData.winnerId =
+          typeof updates.winnerId === "string"
+            ? updates.winnerId
+            : deleteField();
       }
-      if (typeof updates.comment === "string") {
-        updateData.comment = updates.comment;
+      if (Object.prototype.hasOwnProperty.call(updates, "comment")) {
+        updateData.comment =
+          typeof updates.comment === "string" ? updates.comment : deleteField();
       }
       if (typeof updates.playerAId === "string") {
         updateData.playerAId = updates.playerAId;

@@ -53,12 +53,17 @@ export const useLadderMatchesQuery = () => {
 const updateLadderMatchCache = (
   match: LadderMatch,
   updates: Partial<Pick<Booking, "ladderStatus" | "winnerId" | "comment">>
-): LadderMatch => ({
-  ...match,
-  status: updates.ladderStatus ?? match.status,
-  winnerId: updates.winnerId ?? match.winnerId,
-  comment: updates.comment ?? match.comment,
-});
+): LadderMatch => {
+  const hasWinnerId = Object.prototype.hasOwnProperty.call(updates, "winnerId");
+  const hasComment = Object.prototype.hasOwnProperty.call(updates, "comment");
+
+  return {
+    ...match,
+    status: updates.ladderStatus ?? match.status,
+    winnerId: hasWinnerId ? updates.winnerId : match.winnerId,
+    comment: hasComment ? updates.comment : match.comment,
+  };
+};
 
 const updateBookingList = (
   bookings: Booking[],
