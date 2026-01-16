@@ -359,8 +359,8 @@ export const bookingsApi = {
       // Firestore doesn't support OR queries easily, so we'll fetch all and filter
       const snapshot = await getDocs(bookingsCollection);
 
-      return snapshot.docs
-        .map((doc) => {
+      const mappedBookings = snapshot.docs
+        .map((doc): Booking | null => {
           const data = doc.data();
 
           // Try different possible field names
@@ -426,6 +426,8 @@ export const bookingsApi = {
           };
         })
         .filter((booking): booking is Booking => booking !== null);
+
+      return mappedBookings;
     } catch (error) {
       throw new ApiException(
         error instanceof Error
