@@ -38,8 +38,9 @@ export const mockLadderPlayers: LadderPlayer[] = [
 ];
 
 const getPlayerName = (user: User | AuthUser): string => {
-  const email = typeof user.email === "string" ? user.email : "";
-  return user.displayName || email.split("@")[0] || "Spelare";
+  const email = typeof user.email === "string" ? user.email.trim() : "";
+  const emailName = email ? email.split("@")[0] : "";
+  return user.displayName || emailName || "Spelare";
 };
 
 export const buildLadderPlayers = (

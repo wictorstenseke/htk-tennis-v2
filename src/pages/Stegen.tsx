@@ -40,6 +40,8 @@ interface ReportDraft {
   comment: string;
 }
 
+const emptyDraft: ReportDraft = { comment: "" };
+
 const challengeReasonMessages: Record<ChallengeReason, string> = {
   self: "Du kan inte utmana dig själv.",
   "lower-ranked": "Du kan bara utmana spelare som ligger högre upp på stegen.",
@@ -65,6 +67,14 @@ const formatMatchDate = (start: string, end?: string): string => {
     : null;
 
   return `${dateLabel} ${startTime}${endTime ? `–${endTime}` : ""}`;
+};
+
+const createMatchId = (): string => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 };
 
 export const Stegen = () => {
@@ -149,7 +159,7 @@ export const Stegen = () => {
     }
 
     const newMatch: LadderMatch = {
-      id: `match-${crypto.randomUUID()}`,
+      id: `match-${createMatchId()}`,
       playerAId: user.uid,
       playerBId: selectedOpponent.id,
       bookingId: booking.id,
@@ -413,7 +423,7 @@ export const Stegen = () => {
             {plannedMatches.map((match) => {
               const playerA = ladder.find((player) => player.id === match.playerAId);
               const playerB = ladder.find((player) => player.id === match.playerBId);
-              const draft = reportDrafts[match.id] ?? { comment: "" };
+              const draft = reportDrafts[match.id] ?? emptyDraft;
               const matchTitle = `${playerA?.name ?? "Spelare"} vs ${
                 playerB?.name ?? "Spelare"
               }`;
