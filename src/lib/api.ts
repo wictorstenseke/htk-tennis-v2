@@ -33,6 +33,11 @@ import type {
 const BASE_URL = "https://jsonplaceholder.typicode.com";
 
 /**
+ * Error status code for client-side errors (not HTTP errors)
+ */
+const CLIENT_ERROR_STATUS = 0;
+
+/**
  * Custom error class for API errors
  */
 export class ApiException extends Error {
@@ -164,7 +169,7 @@ export const usersApi = {
   getUsers: async (): Promise<User[]> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const usersCollection = collection(db, "users");
@@ -204,7 +209,7 @@ export const usersApi = {
   getUser: async (uid: string): Promise<User> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const userDoc = doc(db, "users", uid);
@@ -249,7 +254,7 @@ export const usersApi = {
   updateUser: async (uid: string, updates: Partial<User>): Promise<User> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const userDoc = doc(db, "users", uid);
@@ -269,7 +274,7 @@ export const usersApi = {
       }
 
       if (Object.keys(updateData).length === 0) {
-        throw new ApiException("Inga uppdateringar tillhandahölls", 0);
+        throw new ApiException("Inga uppdateringar tillhandahölls", CLIENT_ERROR_STATUS);
       }
 
       await updateDoc(userDoc, updateData);
@@ -381,7 +386,7 @@ export const bookingsApi = {
   getBookings: async (): Promise<Booking[]> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const bookingsCollection = collection(db, "bookings");
@@ -444,7 +449,7 @@ export const bookingsApi = {
   getBookingsByDate: async (dateKey: string): Promise<Booking[]> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const startOfDay = new Date(dateKey);
@@ -548,7 +553,7 @@ export const bookingsApi = {
   ): Promise<{ isAvailable: boolean; conflictingBookings: Booking[] }> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const bookingsCollection = collection(db, "bookings");
@@ -591,7 +596,7 @@ export const bookingsApi = {
   createBooking: async (data: CreateBookingInput): Promise<Booking> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const bookingsCollection = collection(db, "bookings");
@@ -670,7 +675,7 @@ export const bookingsApi = {
   > => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const updateData: Record<string, unknown> = {};
@@ -720,7 +725,7 @@ export const bookingsApi = {
   deleteBooking: async (bookingId: string): Promise<void> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const bookingRef = doc(db, "bookings", bookingId);
@@ -770,7 +775,7 @@ export const appSettingsApi = {
   getAppSettings: async (): Promise<AppSettings> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const settingsDoc = doc(db, "appSettings", "default");
@@ -803,7 +808,7 @@ export const appSettingsApi = {
   ): Promise<AppSettings> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const settingsDoc = doc(db, "appSettings", "default");
@@ -814,7 +819,7 @@ export const appSettingsApi = {
       }
 
       if (Object.keys(updateData).length === 0) {
-        throw new ApiException("Inga uppdateringar tillhandahölls", 0);
+        throw new ApiException("Inga uppdateringar tillhandahölls", CLIENT_ERROR_STATUS);
       }
 
       await updateDoc(settingsDoc, updateData);
@@ -844,7 +849,7 @@ export const announcementsApi = {
   getAnnouncement: async (): Promise<Announcement> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const announcementDoc = doc(db, "announcements", "main");
@@ -886,7 +891,7 @@ export const announcementsApi = {
   ): Promise<Announcement> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const announcementDoc = doc(db, "announcements", "main");
@@ -908,7 +913,7 @@ export const announcementsApi = {
       }
 
       if (Object.keys(updateData).length === 0) {
-        throw new ApiException("Inga uppdateringar tillhandahölls", 0);
+        throw new ApiException("Inga uppdateringar tillhandahölls", CLIENT_ERROR_STATUS);
       }
 
       await updateDoc(announcementDoc, updateData);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Save } from "lucide-react";
 import { toast } from "sonner";
@@ -16,25 +16,30 @@ export const Profile = () => {
   const { data: user, isLoading } = useUserQuery(authUser?.uid || "");
   const updateUser = useUpdateUserMutation();
 
-  const [displayName, setDisplayName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [formData, setFormData] = useState(() => ({
+    displayName: user?.displayName || "",
+    phone: user?.phone || "",
+  }));
   const [hasChanges, setHasChanges] = useState(false);
 
-  if (!user && !isLoading && displayName === "" && phone === "") {
-    setDisplayName(user?.displayName || "");
-    setPhone(user?.phone || "");
-  } else if (user && displayName === "" && phone === "") {
-    setDisplayName(user.displayName || "");
-    setPhone(user.phone || "");
-  }
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        displayName: user.displayName || "",
+        phone: user.phone || "",
+      });
+      setHasChanges(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
 
   const handleDisplayNameChange = (value: string) => {
-    setDisplayName(value);
+    setFormData((prev) => ({ ...prev, displayName: value }));
     setHasChanges(true);
   };
 
   const handlePhoneChange = (value: string) => {
-    setPhone(value);
+    setFormData((prev) => ({ ...prev, phone: value }));
     setHasChanges(true);
   };
 
@@ -48,8 +53,8 @@ export const Profile = () => {
       await updateUser.mutateAsync({
         uid: authUser.uid,
         updates: {
-          displayName: displayName.trim() || undefined,
-          phone: phone.trim() || undefined,
+          displayName: formData.displayName.trim() || undefined,
+          phone: formData.phone.trim() || undefined,
         },
       });
       toast.success("Profil uppdaterad");
@@ -102,7 +107,7 @@ export const Profile = () => {
             <Label htmlFor="displayName">Visningsnamn</Label>
             <Input
               id="displayName"
-              value={displayName}
+              value={formData.displayName}
               onChange={(e) => handleDisplayNameChange(e.target.value)}
               placeholder="Ditt namn"
             />
@@ -113,7 +118,7 @@ export const Profile = () => {
             <Input
               id="phone"
               type="tel"
-              value={phone}
+              value={formData.phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
               placeholder="070-123 45 67"
             />

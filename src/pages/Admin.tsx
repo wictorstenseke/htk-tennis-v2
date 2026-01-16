@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Plus, Save, X } from "lucide-react";
 import { toast } from "sonner";
@@ -75,6 +75,18 @@ export const Admin = () => {
   const [userRoles, setUserRoles] = useState<Record<string, string>>({});
 
   const isSuperUser = canEditRoles(currentUser || null);
+
+  useEffect(() => {
+    if (announcement) {
+      setAnnouncementForm({
+        title: announcement.title,
+        body: announcement.body,
+        enabled: announcement.enabled,
+        links: announcement.links || [],
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [announcement?.title, announcement?.body, announcement?.enabled]);
 
   const handleBookingsToggle = async (enabled: boolean) => {
     try {
@@ -170,26 +182,6 @@ export const Admin = () => {
   };
 
   const allUsers = [...(users || []), ...mockedUsers];
-
-  if (!announcement && announcementLoading) {
-    setAnnouncementForm({
-      title: "",
-      body: "",
-      enabled: false,
-      links: [],
-    });
-  } else if (
-    announcement &&
-    announcementForm.title === "" &&
-    announcementForm.body === ""
-  ) {
-    setAnnouncementForm({
-      title: announcement.title,
-      body: announcement.body,
-      enabled: announcement.enabled,
-      links: announcement.links || [],
-    });
-  }
 
   return (
     <div className="space-y-8">
