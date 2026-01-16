@@ -5,7 +5,7 @@ import {
   type User,
 } from "firebase/auth";
 
-import { auth } from "./firebase";
+import { auth, isFirebaseConfigured } from "./firebase";
 
 export type { User };
 
@@ -13,6 +13,10 @@ export const signIn = async (
   email: string,
   password: string
 ): Promise<User> => {
+  if (!isFirebaseConfigured || !auth) {
+    throw new Error("Firebase är inte konfigurerat för inloggning.");
+  }
+
   const userCredential = await signInWithEmailAndPassword(
     auth,
     email,
@@ -25,6 +29,10 @@ export const signUp = async (
   email: string,
   password: string
 ): Promise<User> => {
+  if (!isFirebaseConfigured || !auth) {
+    throw new Error("Firebase är inte konfigurerat för registrering.");
+  }
+
   const userCredential = await createUserWithEmailAndPassword(
     auth,
     email,
@@ -34,6 +42,10 @@ export const signUp = async (
 };
 
 export const signOut = async (): Promise<void> => {
+  if (!isFirebaseConfigured || !auth) {
+    throw new Error("Firebase är inte konfigurerat för utloggning.");
+  }
+
   await firebaseSignOut(auth);
 };
 
@@ -42,6 +54,10 @@ export const signOut = async (): Promise<void> => {
  * This is a utility function for use in route guards
  */
 export const waitForAuthReady = async (): Promise<User | null> => {
+  if (!isFirebaseConfigured || !auth) {
+    return null;
+  }
+
   // Wait for auth to initialize using authStateReady
   await auth.authStateReady();
   return auth.currentUser;

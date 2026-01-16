@@ -1,6 +1,8 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   getDocs,
   orderBy,
   query,
@@ -156,6 +158,10 @@ export const usersApi = {
    */
   getUsers: async (): Promise<User[]> => {
     try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", 0);
+      }
+
       const usersCollection = collection(db, "users");
       const snapshot = await getDocs(usersCollection);
 
@@ -256,6 +262,10 @@ export const bookingsApi = {
    */
   getBookings: async (): Promise<Booking[]> => {
     try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", 0);
+      }
+
       const bookingsCollection = collection(db, "bookings");
       let snapshot;
 
@@ -305,6 +315,10 @@ export const bookingsApi = {
    */
   getBookingsByDate: async (dateKey: string): Promise<Booking[]> => {
     try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", 0);
+      }
+
       const startOfDay = new Date(dateKey);
       startOfDay.setHours(0, 0, 0, 0);
 
@@ -391,6 +405,10 @@ export const bookingsApi = {
     endDate: Date
   ): Promise<{ isAvailable: boolean; conflictingBookings: Booking[] }> => {
     try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", 0);
+      }
+
       const bookingsCollection = collection(db, "bookings");
       // Fetch all bookings and filter in memory since we need to check both startDate and startTime fields
       const snapshot = await getDocs(bookingsCollection);
@@ -430,6 +448,10 @@ export const bookingsApi = {
    */
   createBooking: async (data: CreateBookingInput): Promise<Booking> => {
     try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", 0);
+      }
+
       const bookingsCollection = collection(db, "bookings");
       const startDate = new Date(data.startDate);
       const endDate = new Date(data.endDate);
@@ -463,6 +485,26 @@ export const bookingsApi = {
       console.error("Error creating booking:", error);
       throw new ApiException(
         error instanceof Error ? error.message : "Failed to create booking",
+        0
+      );
+    }
+  },
+
+  /**
+   * Delete an existing booking
+   */
+  deleteBooking: async (bookingId: string): Promise<void> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", 0);
+      }
+
+      const bookingRef = doc(db, "bookings", bookingId);
+      await deleteDoc(bookingRef);
+    } catch (error) {
+      console.error("Error deleting booking:", error);
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to delete booking",
         0
       );
     }

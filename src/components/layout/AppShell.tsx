@@ -1,7 +1,14 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 
-import { HomeIcon, CalendarIcon, LogOutIcon, UserIcon, Menu } from "lucide-react";
+import {
+  CalendarIcon,
+  HomeIcon,
+  ListOrdered,
+  LogOutIcon,
+  Menu,
+  UserIcon,
+} from "lucide-react";
 
 import { Link, useNavigate } from "@tanstack/react-router";
 
@@ -92,6 +99,14 @@ export function AppShell({ children }: AppShellProps) {
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   Boka
+                </Link>
+                <Link
+                  to="/stegen"
+                  className="inline-flex h-10 items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-accent-foreground"
+                  activeProps={{ className: "bg-muted text-accent-foreground" }}
+                >
+                  <ListOrdered className="mr-2 h-4 w-4" />
+                  Stegen
                 </Link>
               </div>
             </div>
@@ -191,6 +206,13 @@ export function AppShell({ children }: AppShellProps) {
                         >
                           <CalendarIcon className="h-4 w-4" />
                           Boka
+                        </Link>
+                        <Link
+                          to="/stegen"
+                          className="flex items-center gap-2 text-md font-semibold"
+                        >
+                          <ListOrdered className="h-4 w-4" />
+                          Stegen
                         </Link>
                       </nav>
 
