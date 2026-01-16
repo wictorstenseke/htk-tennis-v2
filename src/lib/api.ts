@@ -4,6 +4,7 @@ import {
   deleteDoc,
   deleteField,
   doc,
+  getDoc,
   getDocs,
   orderBy,
   query,
@@ -14,7 +15,9 @@ import {
 import { db } from "./firebase";
 
 import type {
+  Announcement,
   ApiError,
+  AppSettings,
   Booking,
   CreateBookingInput,
   CreatePostInput,
@@ -28,6 +31,11 @@ import type {
  * Base API URL - using JSONPlaceholder for demo purposes
  */
 const BASE_URL = "https://jsonplaceholder.typicode.com";
+
+/**
+ * Error status code for client-side errors (not HTTP errors)
+ */
+const CLIENT_ERROR_STATUS = 0;
 
 /**
  * Custom error class for API errors
@@ -161,7 +169,7 @@ export const usersApi = {
   getUsers: async (): Promise<User[]> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const usersCollection = collection(db, "users");
@@ -169,19 +177,116 @@ export const usersApi = {
 
       return snapshot.docs.map((doc) => {
         const data = doc.data();
-        // Validate and construct User object with proper type checking
         return {
           uid: doc.id,
           email: typeof data.email === "string" ? data.email : "",
           displayName:
             typeof data.displayName === "string" ? data.displayName : undefined,
+          phone: typeof data.phone === "string" ? data.phone : undefined,
+          role:
+            data.role === "admin" || data.role === "superuser"
+              ? data.role
+              : undefined,
           createdAt:
-            typeof data.createdAt === "string" ? data.createdAt : undefined,
+            data.createdAt instanceof Timestamp
+              ? data.createdAt.toDate().toISOString()
+              : typeof data.createdAt === "string"
+                ? data.createdAt
+                : undefined,
         };
       });
     } catch (error) {
       throw new ApiException(
         error instanceof Error ? error.message : "Failed to fetch users",
+        0
+      );
+    }
+  },
+
+  /**
+   * Get a single user by UID
+   */
+  getUser: async (uid: string): Promise<User> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const userDoc = doc(db, "users", uid);
+      const snapshot = await getDoc(userDoc);
+
+      if (!snapshot.exists()) {
+        throw new ApiException("Användare hittades inte", 404);
+      }
+
+      const data = snapshot.data();
+      return {
+        uid: snapshot.id,
+        email: typeof data.email === "string" ? data.email : "",
+        displayName:
+          typeof data.displayName === "string" ? data.displayName : undefined,
+        phone: typeof data.phone === "string" ? data.phone : undefined,
+        role:
+          data.role === "admin" || data.role === "superuser"
+            ? data.role
+            : undefined,
+        createdAt:
+          data.createdAt instanceof Timestamp
+            ? data.createdAt.toDate().toISOString()
+            : typeof data.createdAt === "string"
+              ? data.createdAt
+              : undefined,
+      };
+    } catch (error) {
+      if (error instanceof ApiException) {
+        throw error;
+      }
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to fetch user",
+        0
+      );
+    }
+  },
+
+  /**
+   * Update user data
+   */
+  updateUser: async (uid: string, updates: Partial<User>): Promise<User> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const userDoc = doc(db, "users", uid);
+      const updateData: Record<string, unknown> = {};
+
+      if (typeof updates.displayName === "string") {
+        updateData.displayName = updates.displayName;
+      }
+      // Use Object.hasOwn to distinguish between setting phone to empty string (update with deleteField) vs not including it in updates
+      if (Object.hasOwn(updates, "phone")) {
+        updateData.phone =
+          typeof updates.phone === "string" ? updates.phone : deleteField();
+      }
+      if (updates.role === "admin" || updates.role === "superuser") {
+        updateData.role = updates.role;
+      } else if (Object.hasOwn(updates, "role") && !updates.role) {
+        updateData.role = deleteField();
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        throw new ApiException("Inga uppdateringar tillhandahölls", CLIENT_ERROR_STATUS);
+      }
+
+      await updateDoc(userDoc, updateData);
+
+      return usersApi.getUser(uid);
+    } catch (error) {
+      if (error instanceof ApiException) {
+        throw error;
+      }
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to update user",
         0
       );
     }
@@ -282,7 +387,7 @@ export const bookingsApi = {
   getBookings: async (): Promise<Booking[]> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const bookingsCollection = collection(db, "bookings");
@@ -345,7 +450,7 @@ export const bookingsApi = {
   getBookingsByDate: async (dateKey: string): Promise<Booking[]> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const startOfDay = new Date(dateKey);
@@ -449,7 +554,7 @@ export const bookingsApi = {
   ): Promise<{ isAvailable: boolean; conflictingBookings: Booking[] }> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const bookingsCollection = collection(db, "bookings");
@@ -492,7 +597,7 @@ export const bookingsApi = {
   createBooking: async (data: CreateBookingInput): Promise<Booking> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const bookingsCollection = collection(db, "bookings");
@@ -571,7 +676,7 @@ export const bookingsApi = {
   > => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const updateData: Record<string, unknown> = {};
@@ -621,7 +726,7 @@ export const bookingsApi = {
   deleteBooking: async (bookingId: string): Promise<void> => {
     try {
       if (!db) {
-        throw new ApiException("Firebase är inte konfigurerat", 0);
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
       }
 
       const bookingRef = doc(db, "bookings", bookingId);
@@ -658,5 +763,171 @@ export const bookingsApi = {
       isAvailable: conflictingBookings.length === 0,
       conflictingBookings,
     };
+  },
+};
+
+/**
+ * API Client - App Settings endpoints
+ */
+export const appSettingsApi = {
+  /**
+   * Get app settings from Firestore
+   */
+  getAppSettings: async (): Promise<AppSettings> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const settingsDoc = doc(db, "appSettings", "default");
+      const snapshot = await getDoc(settingsDoc);
+
+      if (!snapshot.exists()) {
+        return { bookingsEnabled: true };
+      }
+
+      const data = snapshot.data();
+      return {
+        bookingsEnabled:
+          typeof data.bookingsEnabled === "boolean"
+            ? data.bookingsEnabled
+            : true,
+      };
+    } catch (error) {
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to fetch app settings",
+        0
+      );
+    }
+  },
+
+  /**
+   * Update app settings
+   */
+  updateAppSettings: async (
+    updates: Partial<AppSettings>
+  ): Promise<AppSettings> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const settingsDoc = doc(db, "appSettings", "default");
+      const updateData: Record<string, unknown> = {};
+
+      if (typeof updates.bookingsEnabled === "boolean") {
+        updateData.bookingsEnabled = updates.bookingsEnabled;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        throw new ApiException("Inga uppdateringar tillhandahölls", CLIENT_ERROR_STATUS);
+      }
+
+      await updateDoc(settingsDoc, updateData);
+
+      return appSettingsApi.getAppSettings();
+    } catch (error) {
+      if (error instanceof ApiException) {
+        throw error;
+      }
+      throw new ApiException(
+        error instanceof Error
+          ? error.message
+          : "Failed to update app settings",
+        0
+      );
+    }
+  },
+};
+
+/**
+ * API Client - Announcements endpoints
+ */
+export const announcementsApi = {
+  /**
+   * Get announcement from Firestore
+   */
+  getAnnouncement: async (): Promise<Announcement> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const announcementDoc = doc(db, "announcements", "main");
+      const snapshot = await getDoc(announcementDoc);
+
+      if (!snapshot.exists()) {
+        return { title: "", body: "", enabled: false };
+      }
+
+      const data = snapshot.data();
+      return {
+        title: typeof data.title === "string" ? data.title : "",
+        body: typeof data.body === "string" ? data.body : "",
+        enabled:
+          typeof data.enabled === "boolean" ? data.enabled : false,
+        links: Array.isArray(data.links)
+          ? data.links.filter(
+              (link): link is { label: string; url: string } =>
+                typeof link === "object" &&
+                link !== null &&
+                typeof link.label === "string" &&
+                typeof link.url === "string"
+            )
+          : undefined,
+      };
+    } catch (error) {
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to fetch announcement",
+        0
+      );
+    }
+  },
+
+  /**
+   * Update announcement
+   */
+  updateAnnouncement: async (
+    updates: Partial<Announcement>
+  ): Promise<Announcement> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const announcementDoc = doc(db, "announcements", "main");
+      const updateData: Record<string, unknown> = {};
+
+      if (typeof updates.title === "string") {
+        updateData.title = updates.title;
+      }
+      if (typeof updates.body === "string") {
+        updateData.body = updates.body;
+      }
+      if (typeof updates.enabled === "boolean") {
+        updateData.enabled = updates.enabled;
+      }
+      if (Array.isArray(updates.links)) {
+        updateData.links = updates.links;
+      } else if (Object.hasOwn(updates, "links") && !updates.links) {
+        updateData.links = deleteField();
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        throw new ApiException("Inga uppdateringar tillhandahölls", CLIENT_ERROR_STATUS);
+      }
+
+      await updateDoc(announcementDoc, updateData);
+
+      return announcementsApi.getAnnouncement();
+    } catch (error) {
+      if (error instanceof ApiException) {
+        throw error;
+      }
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to update announcement",
+        0
+      );
+    }
   },
 };

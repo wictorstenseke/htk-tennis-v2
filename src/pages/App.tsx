@@ -1,5 +1,9 @@
+import { AlertCircle, ExternalLink } from "lucide-react";
+
 import { BookingForm } from "@/components/booking/BookingForm";
 import { BookingsList } from "@/components/booking/BookingsList";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -9,10 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAnnouncementQuery } from "@/hooks/useAnnouncements";
+import { useAppSettingsQuery } from "@/hooks/useAppSettings";
 import { useUsersQuery } from "@/hooks/useUsers";
 
 export const App = () => {
   const { data: users, isLoading, error } = useUsersQuery();
+  const { data: appSettings } = useAppSettingsQuery();
+  const { data: announcement } = useAnnouncementQuery();
+
+  const bookingsEnabled = appSettings?.bookingsEnabled ?? true;
+  const showAnnouncement = announcement?.enabled && announcement?.title;
 
   if (isLoading) {
     return (
@@ -36,13 +47,50 @@ export const App = () => {
 
   return (
     <div className="space-y-8">
+      {showAnnouncement && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>{announcement.title}</AlertTitle>
+          <AlertDescription>
+            <p className="mt-2">{announcement.body}</p>
+            {announcement.links && announcement.links.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {announcement.links.map((link, index) => (
+                  <Button key={index} variant="outline" size="sm" asChild>
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {link.label}
+                      <ExternalLink className="ml-2 h-3 w-3" />
+                    </a>
+                  </Button>
+                ))}
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div>
         <h2 className="text-2xl font-bold">Ny matchbokning</h2>
         <p className="text-muted-foreground">
           Boka match genom att välja start- och sluttider
         </p>
         <div className="mt-4">
-          <BookingForm />
+          {!bookingsEnabled ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Bokningar inaktiverade</AlertTitle>
+              <AlertDescription>
+                Nya bokningar är för närvarande inaktiverade. Kontakta en
+                administratör för mer information.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <BookingForm />
+          )}
         </div>
       </div>
 
