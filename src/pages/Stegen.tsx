@@ -33,7 +33,7 @@ import {
 } from "@/lib/ladder";
 import { cn } from "@/lib/utils";
 
-import type { Booking } from "@/types/api";
+import type { Booking, User } from "@/types/api";
 
 interface ReportDraft {
   winnerId?: string;
@@ -42,6 +42,46 @@ interface ReportDraft {
 
 const emptyDraft: ReportDraft = { comment: "" };
 const matchIdPrefix = "match";
+
+// Mocked users for testing
+const mockedUsers: User[] = [
+  {
+    uid: "mock-user-1",
+    email: "elin.andersson@example.com",
+    displayName: "Elin Andersson",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    uid: "mock-user-2",
+    email: "johan.larsson@example.com",
+    displayName: "Johan Larsson",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    uid: "mock-user-3",
+    email: "sara.nilsson@example.com",
+    displayName: "Sara Nilsson",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    uid: "mock-user-4",
+    email: "oskar.svensson@example.com",
+    displayName: "Oskar Svensson",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    uid: "mock-user-5",
+    email: "lina.berg@example.com",
+    displayName: "Lina Berg",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    uid: "mock-user-6",
+    email: "erik.persson@example.com",
+    displayName: "Erik Persson",
+    createdAt: new Date().toISOString(),
+  },
+];
 
 const challengeReasonMessages: Record<ChallengeReason, string> = {
   self: "Du kan inte utmana dig själv.",
@@ -112,7 +152,15 @@ export const Stegen = () => {
       return [];
     }
 
-    return buildLadderPlayers(users, user);
+    // Always include mocked users, and merge with real users
+    const allUsers = [...mockedUsers];
+    if (users && users.length > 0) {
+      // Add real users that aren't already in mocked users
+      const mockedUserIds = new Set(mockedUsers.map((u) => u.uid));
+      const additionalUsers = users.filter((u) => !mockedUserIds.has(u.uid));
+      allUsers.push(...additionalUsers);
+    }
+    return buildLadderPlayers(allUsers, user);
   }, [isLoading, users, user]);
 
   const ladder = useMemo(() => {
@@ -312,7 +360,7 @@ export const Stegen = () => {
           <AlertCircle />
           <AlertTitle>Testdata aktiv</AlertTitle>
           <AlertDescription>
-            Inga användare hittades ännu, så stegen visar exempelspelare.
+            Stegen inkluderar exempelspelare för testning.
           </AlertDescription>
         </Alert>
       )}
