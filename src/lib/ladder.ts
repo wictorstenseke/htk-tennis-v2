@@ -138,7 +138,6 @@ export const bookingToLadderMatch = (booking: Booking): LadderMatch | null => {
     id: booking.id,
     playerAId: booking.playerAId,
     playerBId: booking.playerBId,
-    bookingId: booking.id,
     bookingStart: booking.startDate,
     bookingEnd: booking.endDate,
     status: booking.ladderStatus ?? "planned",

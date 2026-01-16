@@ -589,7 +589,7 @@ export const bookingsApi = {
       }
 
       if (Object.keys(updateData).length === 0) {
-        return { id: bookingId, ...updates };
+        throw new ApiException("No ladder match updates provided", 0);
       }
 
       const bookingRef = doc(db, "bookings", bookingId);

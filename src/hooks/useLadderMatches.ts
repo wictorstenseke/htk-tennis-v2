@@ -36,7 +36,12 @@ export const useLadderMatchesQuery = () => {
   );
 
   useEffect(() => {
-    queryClient.setQueryData(ladderMatchKeys.list(), ladderMatches);
+    const cachedMatches = queryClient.getQueryData<LadderMatch[]>(
+      ladderMatchKeys.list()
+    );
+    if (cachedMatches !== ladderMatches) {
+      queryClient.setQueryData(ladderMatchKeys.list(), ladderMatches);
+    }
   }, [queryClient, ladderMatches]);
 
   return {
@@ -54,6 +59,26 @@ const updateLadderMatchCache = (
   winnerId: updates.winnerId ?? match.winnerId,
   comment: updates.comment ?? match.comment,
 });
+
+const updateBookingList = (
+  bookings: Booking[],
+  bookingId: string,
+  updates: Partial<Pick<Booking, "ladderStatus" | "winnerId" | "comment">>
+) =>
+  bookings.map((booking) =>
+    booking.id === bookingId ? { ...booking, ...updates } : booking
+  );
+
+const updateLadderMatchList = (
+  matches: LadderMatch[],
+  bookingId: string,
+  updates: Partial<Pick<Booking, "ladderStatus" | "winnerId" | "comment">>
+) =>
+  matches.map((match) =>
+    match.id === bookingId || match.bookingId === bookingId
+      ? updateLadderMatchCache(match, updates)
+      : match
+  );
 
 export const useUpdateLadderMatchMutation = () => {
   const queryClient = useQueryClient();
@@ -76,16 +101,10 @@ export const useUpdateLadderMatchMutation = () => {
       );
 
       queryClient.setQueryData<Booking[]>(bookingKeys.list(), (old = []) =>
-        old.map((booking) =>
-          booking.id === bookingId ? { ...booking, ...updates } : booking
-        )
+        updateBookingList(old, bookingId, updates)
       );
       queryClient.setQueryData<LadderMatch[]>(ladderMatchKeys.list(), (old = []) =>
-        old.map((match) =>
-          match.id === bookingId || match.bookingId === bookingId
-            ? updateLadderMatchCache(match, updates)
-            : match
-        )
+        updateLadderMatchList(old, bookingId, updates)
       );
 
       return { previousBookings, previousMatches };
@@ -100,18 +119,10 @@ export const useUpdateLadderMatchMutation = () => {
     },
     onSuccess: (updatedMatch) => {
       queryClient.setQueryData<Booking[]>(bookingKeys.list(), (old = []) =>
-        old.map((booking) =>
-          booking.id === updatedMatch.id
-            ? { ...booking, ...updatedMatch }
-            : booking
-        )
+        updateBookingList(old, updatedMatch.id, updatedMatch)
       );
       queryClient.setQueryData<LadderMatch[]>(ladderMatchKeys.list(), (old = []) =>
-        old.map((match) =>
-          match.id === updatedMatch.id || match.bookingId === updatedMatch.id
-            ? updateLadderMatchCache(match, updatedMatch)
-            : match
-        )
+        updateLadderMatchList(old, updatedMatch.id, updatedMatch)
       );
     },
     onSettled: () => {
