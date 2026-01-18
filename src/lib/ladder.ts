@@ -4,6 +4,8 @@ import type { Booking, User } from "@/types/api";
 export interface LadderPlayer {
   id: string;
   name: string;
+  wins: number;
+  losses: number;
 }
 
 export type ChallengeReason = "self" | "lower-ranked" | "too-far" | "missing";
@@ -30,20 +32,52 @@ export interface LadderMatch {
 }
 
 export const mockLadderPlayers: LadderPlayer[] = [
-  { id: "mock-1", name: "Elin Andersson" },
-  { id: "mock-2", name: "Johan Larsson" },
-  { id: "mock-3", name: "Sara Nilsson" },
-  { id: "mock-4", name: "Oskar Svensson" },
-  { id: "mock-5", name: "Lina Berg" },
-  { id: "mock-6", name: "Erik Persson" },
-  { id: "mock-7", name: "Maja Lind" },
-  { id: "mock-8", name: "Victor Holm" },
+  { id: "mock-1", name: "Elin Andersson", wins: 0, losses: 0 },
+  { id: "mock-2", name: "Johan Larsson", wins: 0, losses: 0 },
+  { id: "mock-3", name: "Sara Nilsson", wins: 0, losses: 0 },
+  { id: "mock-4", name: "Oskar Svensson", wins: 0, losses: 0 },
+  { id: "mock-5", name: "Lina Berg", wins: 0, losses: 0 },
+  { id: "mock-6", name: "Erik Persson", wins: 0, losses: 0 },
+  { id: "mock-7", name: "Maja Lind", wins: 0, losses: 0 },
+  { id: "mock-8", name: "Victor Holm", wins: 0, losses: 0 },
 ];
 
 const getPlayerName = (user: User | AuthUser): string => {
   const email = typeof user.email === "string" ? user.email.trim() : "";
   const emailName = email ? email.split("@")[0] : "";
   return user.displayName || emailName || fallbackPlayerName;
+};
+
+const getPlayerStats = (user?: User) => ({
+  wins: typeof user?.ladderWins === "number" ? user.ladderWins : 0,
+  losses: typeof user?.ladderLosses === "number" ? user.ladderLosses : 0,
+});
+
+const resolveLadderMatchIndices = (
+  ladder: LadderPlayer[],
+  winnerId: string,
+  loserId: string
+) => {
+  const winnerIndex = ladder.findIndex((player) => player.id === winnerId);
+  const loserIndex = ladder.findIndex((player) => player.id === loserId);
+
+  if (winnerIndex === -1 || loserIndex === -1 || winnerIndex === loserIndex) {
+    return null;
+  }
+
+  return { winnerIndex, loserIndex };
+};
+
+const isInvalidMatchResult = (winnerId: string, loserId: string) => {
+  if (winnerId !== loserId) {
+    return false;
+  }
+
+  console.warn("Invalid ladder result: winner and loser match the same player.", {
+    winnerId,
+    loserId,
+  });
+  return true;
 };
 
 export const buildLadderPlayers = (
@@ -55,6 +89,7 @@ export const buildLadderPlayers = (
       ? users.map((user) => ({
           id: user.uid,
           name: getPlayerName(user),
+          ...getPlayerStats(user),
         }))
       : mockLadderPlayers;
 
@@ -73,7 +108,7 @@ export const buildLadderPlayers = (
 
   return [
     ...sortedPlayers,
-    { id: currentPlayerId, name: getPlayerName(currentUser) },
+    { id: currentPlayerId, name: getPlayerName(currentUser), wins: 0, losses: 0 },
   ];
 };
 
@@ -112,13 +147,12 @@ export const applyLadderResult = (
   winnerId: string,
   loserId: string
 ): LadderPlayer[] => {
-  const winnerIndex = ladder.findIndex((player) => player.id === winnerId);
-  const loserIndex = ladder.findIndex((player) => player.id === loserId);
-
-  if (winnerIndex === -1 || loserIndex === -1 || winnerIndex === loserIndex) {
+  const matchIndices = resolveLadderMatchIndices(ladder, winnerId, loserId);
+  if (!matchIndices) {
     return ladder;
   }
 
+  const { winnerIndex, loserIndex } = matchIndices;
   if (winnerIndex < loserIndex) {
     return ladder;
   }
@@ -128,6 +162,63 @@ export const applyLadderResult = (
   updated.splice(loserIndex, 0, winner);
   return updated;
 };
+
+export const applyLadderResultWithStats = (
+  ladder: LadderPlayer[],
+  winnerId: string,
+  loserId: string
+): LadderPlayer[] => {
+  if (isInvalidMatchResult(winnerId, loserId)) {
+    return ladder;
+  }
+
+  const matchIndices = resolveLadderMatchIndices(ladder, winnerId, loserId);
+  if (!matchIndices) {
+    return ladder;
+  }
+
+  const { winnerIndex, loserIndex } = matchIndices;
+  const updated = [...ladder];
+  const winner = updated[winnerIndex];
+  const loser = updated[loserIndex];
+  updated[winnerIndex] = { ...winner, wins: winner.wins + 1 };
+  updated[loserIndex] = { ...loser, losses: loser.losses + 1 };
+
+  if (winnerIndex < loserIndex) {
+    return updated;
+  }
+
+  const [movedWinner] = updated.splice(winnerIndex, 1);
+  updated.splice(loserIndex, 0, movedWinner);
+  return updated;
+};
+
+/**
+ * Update win/loss stats without changing ladder positions.
+ */
+export const updatePlayerStats = (
+  ladder: LadderPlayer[],
+  winnerId: string,
+  loserId: string
+): LadderPlayer[] => {
+  if (isInvalidMatchResult(winnerId, loserId)) {
+    return ladder;
+  }
+
+  return ladder.map((player) => {
+    if (player.id === winnerId) {
+      return { ...player, wins: player.wins + 1 };
+    }
+    if (player.id === loserId) {
+      return { ...player, losses: player.losses + 1 };
+    }
+    return player;
+  });
+};
+
+export const formatPlayerStats = (
+  player: Pick<LadderPlayer, "wins" | "losses">
+): string => `${player.wins}–${player.losses}`;
 
 export const bookingToLadderMatch = (booking: Booking): LadderMatch | null => {
   if (!booking.playerAId || !booking.playerBId) {

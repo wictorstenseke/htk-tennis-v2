@@ -2,18 +2,20 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyLadderResult,
+  formatPlayerStats,
   getChallengeStatus,
   type LadderPlayer,
+  updatePlayerStats,
 } from "@/lib/ladder";
 
 describe("getChallengeStatus", () => {
   const ladder: LadderPlayer[] = [
-    { id: "p1", name: "Player 1" },
-    { id: "p2", name: "Player 2" },
-    { id: "p3", name: "Player 3" },
-    { id: "p4", name: "Player 4" },
-    { id: "p5", name: "Player 5" },
-    { id: "p6", name: "Player 6" },
+    { id: "p1", name: "Player 1", wins: 0, losses: 0 },
+    { id: "p2", name: "Player 2", wins: 0, losses: 0 },
+    { id: "p3", name: "Player 3", wins: 0, losses: 0 },
+    { id: "p4", name: "Player 4", wins: 0, losses: 0 },
+    { id: "p5", name: "Player 5", wins: 0, losses: 0 },
+    { id: "p6", name: "Player 6", wins: 0, losses: 0 },
   ];
 
   it("should allow challenges when the opponent is within four positions above", () => {
@@ -32,11 +34,11 @@ describe("getChallengeStatus", () => {
 
 describe("applyLadderResult", () => {
   const ladder: LadderPlayer[] = [
-    { id: "a", name: "Anna" },
-    { id: "b", name: "Bjorn" },
-    { id: "c", name: "Cecilia" },
-    { id: "d", name: "David" },
-    { id: "e", name: "Eva" },
+    { id: "a", name: "Anna", wins: 2, losses: 1 },
+    { id: "b", name: "Bjorn", wins: 1, losses: 3 },
+    { id: "c", name: "Cecilia", wins: 4, losses: 0 },
+    { id: "d", name: "David", wins: 0, losses: 2 },
+    { id: "e", name: "Eva", wins: 3, losses: 2 },
   ];
 
   it("should move the lower-ranked winner to the loser's position when the winner is below", () => {
@@ -61,5 +63,29 @@ describe("applyLadderResult", () => {
       "d",
       "e",
     ]);
+  });
+});
+
+describe("updatePlayerStats", () => {
+  it("should increment wins and losses for the winner and loser", () => {
+    const ladder: LadderPlayer[] = [
+      { id: "winner", name: "Winner", wins: 1, losses: 0 },
+      { id: "loser", name: "Loser", wins: 2, losses: 3 },
+    ];
+
+    const updated = updatePlayerStats(ladder, "winner", "loser");
+
+    expect(updated).toEqual([
+      { id: "winner", name: "Winner", wins: 2, losses: 0 },
+      { id: "loser", name: "Loser", wins: 2, losses: 4 },
+    ]);
+  });
+});
+
+describe("formatPlayerStats", () => {
+  it("should format wins and losses using an en dash", () => {
+    const stats = formatPlayerStats({ wins: 3, losses: 1 });
+
+    expect(stats).toBe("3–1");
   });
 });

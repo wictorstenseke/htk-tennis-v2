@@ -57,6 +57,8 @@ export interface User {
   email: string;
   displayName?: string;
   phone?: string;
+  ladderWins?: number;
+  ladderLosses?: number;
   role?: "admin" | "superuser";
   createdAt?: string;
 }

@@ -26,10 +26,11 @@ import {
   useLadderMatchesQuery,
   useUpdateLadderMatchMutation,
 } from "@/hooks/useLadderMatches";
-import { useUsersQuery } from "@/hooks/useUsers";
+import { useUpdateUserStatsMutation, useUsersQuery } from "@/hooks/useUsers";
 import {
-  applyLadderResult,
+  applyLadderResultWithStats,
   buildLadderPlayers,
+  formatPlayerStats,
   getChallengeStatus,
   type ChallengeReason,
   type LadderMatch,
@@ -72,6 +73,49 @@ const formatMatchDate = (start: string, end?: string): string => {
   return `${dateLabel} ${startTime}${endTime ? `–${endTime}` : ""}`;
 };
 
+/**
+ * Build a human-readable result summary for completed ladder matches.
+ */
+const getMatchResultText = (
+  match: LadderMatch,
+  playerA?: LadderPlayer,
+  playerB?: LadderPlayer
+): string => {
+  if (!match.winnerId) {
+    return "Resultat saknas.";
+  }
+
+  const winner = match.winnerId === match.playerAId ? playerA : playerB;
+  const loser = match.winnerId === match.playerAId ? playerB : playerA;
+  const winnerName = winner?.name ?? "Spelare";
+  const loserName = loser?.name ?? "Spelare";
+
+  return `Vinnare: ${winnerName} • Förlorare: ${loserName}`;
+};
+
+/**
+ * Prepare ladder stat updates for known users based on updated ladder state.
+ */
+const buildStatsUpdates = (
+  ladder: LadderPlayer[],
+  playerIds: string[],
+  knownUserIds: Set<string>
+) => {
+  const playersById = new Map(
+    ladder.map((player) => [player.id, player] as const)
+  );
+  return playerIds
+    .map((id) => playersById.get(id))
+    .filter(
+      (player): player is LadderPlayer => !!player && knownUserIds.has(player.id)
+    )
+    .map((player) => ({
+      uid: player.id,
+      ladderWins: player.wins,
+      ladderLosses: player.losses,
+    }));
+};
+
 export const Stegen = () => {
   const { user } = useAuth();
   const { data: users, isLoading, error } = useUsersQuery();
@@ -82,6 +126,7 @@ export const Stegen = () => {
   } = useLadderMatchesQuery();
   const deleteLadderMatchMutation = useDeleteLadderMatchMutation();
   const updateLadderMatchMutation = useUpdateLadderMatchMutation();
+  const updateUserStatsMutation = useUpdateUserStatsMutation();
   const [ladderOverride, setLadderOverride] = useState<LadderPlayer[] | null>(
     null
   );
@@ -133,13 +178,15 @@ export const Stegen = () => {
 
   const usingMockPlayers = !isLoading && (!users || users.length === 0);
   const currentPlayerId = user?.uid ?? "";
+  const knownUserIds = useMemo(
+    () => new Set((users ?? []).map((currentUser) => currentUser.uid)),
+    [users]
+  );
   const currentPlayerPosition =
     currentPlayerId !== ""
       ? ladder.findIndex((player) => player.id === currentPlayerId)
       : -1;
-  const plannedMatches = ladderMatches.filter(
-    (match) => match.status === "planned"
-  );
+  const matchCount = ladderMatches.length;
   const isContentLoading = isLoading || matchesLoading;
 
   const handleSelectOpponent = (opponent: LadderPlayer) => {
@@ -210,14 +257,37 @@ export const Stegen = () => {
       },
       {
         onSuccess: () => {
-          setLadderOverride((current) =>
-            applyLadderResult(current ?? basePlayers, winnerId, loserId)
+          const currentLadder = ladderOverride ?? basePlayers;
+          const updatedLadder = applyLadderResultWithStats(
+            currentLadder,
+            winnerId,
+            loserId
           );
+          setLadderOverride(updatedLadder);
           setReportDrafts((current) => {
             const updated = { ...current };
             delete updated[match.id];
             return updated;
           });
+          const statUpdates = buildStatsUpdates(
+            updatedLadder,
+            [winnerId, loserId],
+            knownUserIds
+          );
+          if (statUpdates.length > 0) {
+            updateUserStatsMutation.mutate(
+              { updates: statUpdates },
+              {
+                onError: (error) => {
+                  toast.error(
+                    error instanceof Error
+                      ? error.message
+                      : "Kunde inte uppdatera statistik."
+                  );
+                },
+              }
+            );
+          }
           toast.success("Resultatet är rapporterat och stegen är uppdaterad.");
         },
         onError: (error) => {
@@ -335,6 +405,7 @@ export const Stegen = () => {
                 <TableRow>
                   <TableHead className="w-24">Placering</TableHead>
                   <TableHead>Spelare</TableHead>
+                  <TableHead className="w-32">Statistik</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -377,6 +448,9 @@ export const Stegen = () => {
                         {status?.eligible && (
                           <Badge variant="outline">Utmaningsbar</Badge>
                         )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatPlayerStats(player)}
                       </TableCell>
                     </TableRow>
                   );
@@ -432,16 +506,16 @@ export const Stegen = () => {
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Planerade stegen-matcher</h2>
-          <Badge variant="outline">{plannedMatches.length} matcher</Badge>
+          <h2 className="text-2xl font-bold">Stegen-matcher</h2>
+          <Badge variant="outline">{matchCount} matcher</Badge>
         </div>
-        {plannedMatches.length === 0 ? (
+        {matchCount === 0 ? (
           <div className="rounded-lg border border-muted bg-muted/50 p-8 text-center text-muted-foreground">
-            Inga planerade matcher ännu.
+            Inga stegen-matcher ännu.
           </div>
         ) : (
           <div className="space-y-4">
-            {plannedMatches.map((match) => {
+            {ladderMatches.map((match) => {
               const playerA = ladder.find((player) => player.id === match.playerAId);
               const playerB = ladder.find((player) => player.id === match.playerBId);
               const draft = reportDrafts[match.id] ?? emptyDraft;
@@ -452,6 +526,8 @@ export const Stegen = () => {
                 match.bookingStart && match.bookingEnd
                   ? formatMatchDate(match.bookingStart, match.bookingEnd)
                   : "Tid ej angiven";
+              const isCompleted = match.status === "completed";
+              const resultText = getMatchResultText(match, playerA, playerB);
 
               return (
                 <Card key={match.id}>
@@ -463,65 +539,78 @@ export const Stegen = () => {
                         {match.court ? ` • ${match.court}` : " • Bana ej angiven"}
                       </div>
                     </div>
-                    <Badge variant="secondary">Planerad</Badge>
+                    <Badge variant={isCompleted ? "outline" : "secondary"}>
+                      {isCompleted ? "Avklarad" : "Planerad"}
+                    </Badge>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Välj vinnare</Label>
-                      <RadioGroup
-                        value={draft.winnerId ?? ""}
-                        onValueChange={(value) =>
-                          handleReportWinnerChange(match.id, value)
-                        }
-                      >
-                        <div className="flex items-center gap-2">
-                          <RadioGroupItem
-                            value={match.playerAId}
-                            id={`${match.id}-player-a`}
-                          />
-                          <Label htmlFor={`${match.id}-player-a`}>
-                            {playerA?.name ?? "Spelare A"}
-                          </Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <RadioGroupItem
-                            value={match.playerBId}
-                            id={`${match.id}-player-b`}
-                          />
-                          <Label htmlFor={`${match.id}-player-b`}>
-                            {playerB?.name ?? "Spelare B"}
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`${match.id}-comment`}>
-                        Kommentar (valfritt)
-                      </Label>
-                      <Textarea
-                        id={`${match.id}-comment`}
-                        value={draft.comment ?? ""}
-                        onChange={(event) =>
-                          handleReportCommentChange(match.id, event.target.value)
-                        }
-                        placeholder="Skriv en kort kommentar om matchen"
-                      />
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button onClick={() => handleReportResult(match)}>
-                        Rapportera resultat
-                      </Button>
-                      <Button
-                        variant="outline"
-                        disabled={cancelingMatchId === match.id}
-                        onClick={() => handleCancelMatch(match)}
-                      >
-                        {cancelingMatchId === match.id
-                          ? "Avbokar..."
-                          : "Avboka match"}
-                      </Button>
-                    </div>
-                  </CardContent>
+                  {isCompleted ? (
+                    <CardContent className="space-y-2">
+                      <p className="text-sm font-medium">{resultText}</p>
+                      {match.comment && (
+                        <p className="text-sm text-muted-foreground">
+                          {match.comment}
+                        </p>
+                      )}
+                    </CardContent>
+                  ) : (
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Välj vinnare</Label>
+                        <RadioGroup
+                          value={draft.winnerId ?? ""}
+                          onValueChange={(value) =>
+                            handleReportWinnerChange(match.id, value)
+                          }
+                        >
+                          <div className="flex items-center gap-2">
+                            <RadioGroupItem
+                              value={match.playerAId}
+                              id={`${match.id}-player-a`}
+                            />
+                            <Label htmlFor={`${match.id}-player-a`}>
+                              {playerA?.name ?? "Spelare A"}
+                            </Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <RadioGroupItem
+                              value={match.playerBId}
+                              id={`${match.id}-player-b`}
+                            />
+                            <Label htmlFor={`${match.id}-player-b`}>
+                              {playerB?.name ?? "Spelare B"}
+                            </Label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`${match.id}-comment`}>
+                          Kommentar (valfritt)
+                        </Label>
+                        <Textarea
+                          id={`${match.id}-comment`}
+                          value={draft.comment ?? ""}
+                          onChange={(event) =>
+                            handleReportCommentChange(match.id, event.target.value)
+                          }
+                          placeholder="Skriv en kort kommentar om matchen"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button onClick={() => handleReportResult(match)}>
+                          Rapportera resultat
+                        </Button>
+                        <Button
+                          variant="outline"
+                          disabled={cancelingMatchId === match.id}
+                          onClick={() => handleCancelMatch(match)}
+                        >
+                          {cancelingMatchId === match.id
+                            ? "Avbokar..."
+                            : "Avboka match"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  )}
                 </Card>
               );
             })}
