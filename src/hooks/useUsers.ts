@@ -77,3 +77,132 @@ export const useUpdateUserMutation = () => {
     },
   });
 };
+
+type UserStatsUpdate = Pick<User, "uid" | "ladderWins" | "ladderLosses">;
+const hasStatsUpdates = (updates: UserStatsUpdate[]) => updates.length > 0;
+
+const applyUserStatsUpdate = (user: User, update: UserStatsUpdate): User => {
+  const updatedUser = { ...user };
+  if (Object.hasOwn(update, "ladderWins")) {
+    updatedUser.ladderWins = update.ladderWins;
+  }
+  if (Object.hasOwn(update, "ladderLosses")) {
+    updatedUser.ladderLosses = update.ladderLosses;
+  }
+  return updatedUser;
+};
+
+const updateUsersWithStats = (users: User[], updates: UserStatsUpdate[]) => {
+  const updatesMap = new Map(
+    updates.map((update) => [update.uid, update] as const)
+  );
+  return users.map((user) => {
+    const update = updatesMap.get(user.uid);
+    return update ? applyUserStatsUpdate(user, update) : user;
+  });
+};
+
+/**
+ * Hook to update ladder stats for one or more users.
+ */
+export const useUpdateUserStatsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ updates }: { updates: UserStatsUpdate[] }) => {
+      if (!hasStatsUpdates(updates)) {
+        return [];
+      }
+      return Promise.all(
+        updates.map((update) =>
+          usersApi.updateUser(update.uid, {
+            ladderWins: update.ladderWins,
+            ladderLosses: update.ladderLosses,
+          })
+        )
+      );
+    },
+    onMutate: async ({ updates }) => {
+      if (!hasStatsUpdates(updates)) {
+        return {
+          skipped: true,
+          previousUsers: undefined,
+          previousDetails: new Map<string, User | undefined>(),
+          previousCurrent: undefined,
+        };
+      }
+      await queryClient.cancelQueries({ queryKey: userKeys.all });
+
+      const previousUsers = queryClient.getQueryData<User[]>(userKeys.list());
+      const previousDetails = new Map<string, User | undefined>();
+      updates.forEach((update) => {
+        previousDetails.set(
+          update.uid,
+          queryClient.getQueryData<User>(userKeys.detail(update.uid))
+        );
+      });
+      const previousCurrent = queryClient.getQueryData<User | null>(
+        userKeys.current()
+      );
+
+      queryClient.setQueryData<User[]>(userKeys.list(), (old = []) =>
+        updateUsersWithStats(old, updates)
+      );
+      updates.forEach((update) => {
+        queryClient.setQueryData<User | undefined>(
+          userKeys.detail(update.uid),
+          (old) => (old ? applyUserStatsUpdate(old, update) : old)
+        );
+      });
+      queryClient.setQueryData<User | null>(userKeys.current(), (old) => {
+        if (!old) {
+          return old;
+        }
+        const update = updates.find((item) => item.uid === old.uid);
+        return update ? applyUserStatsUpdate(old, update) : old;
+      });
+
+      return { previousUsers, previousDetails, previousCurrent };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.skipped) {
+        return;
+      }
+      if (context?.previousUsers) {
+        queryClient.setQueryData(userKeys.list(), context.previousUsers);
+      }
+      if (context?.previousDetails) {
+        context.previousDetails.forEach((user, uid) => {
+          queryClient.setQueryData(userKeys.detail(uid), user);
+        });
+      }
+      if (Object.hasOwn(context ?? {}, "previousCurrent")) {
+        queryClient.setQueryData(userKeys.current(), context?.previousCurrent);
+      }
+    },
+    onSuccess: (updatedUsers) => {
+      if (updatedUsers.length === 0) {
+        return;
+      }
+      queryClient.setQueryData<User[]>(userKeys.list(), (old = []) => {
+        const updatedUsersById = new Map(
+          updatedUsers.map((user) => [user.uid, user] as const)
+        );
+        return old.map((user) => updatedUsersById.get(user.uid) ?? user);
+      });
+      updatedUsers.forEach((user) => {
+        queryClient.setQueryData(userKeys.detail(user.uid), user);
+      });
+      queryClient.setQueryData<User | null>(userKeys.current(), (old) => {
+        if (!old) {
+          return old;
+        }
+        const updated = updatedUsers.find((user) => user.uid === old.uid);
+        return updated ?? old;
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+    },
+  });
+};

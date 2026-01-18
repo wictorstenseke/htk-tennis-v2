@@ -183,6 +183,10 @@ export const usersApi = {
           displayName:
             typeof data.displayName === "string" ? data.displayName : undefined,
           phone: typeof data.phone === "string" ? data.phone : undefined,
+          ladderWins:
+            typeof data.ladderWins === "number" ? data.ladderWins : undefined,
+          ladderLosses:
+            typeof data.ladderLosses === "number" ? data.ladderLosses : undefined,
           role:
             data.role === "admin" || data.role === "superuser"
               ? data.role
@@ -226,6 +230,10 @@ export const usersApi = {
         displayName:
           typeof data.displayName === "string" ? data.displayName : undefined,
         phone: typeof data.phone === "string" ? data.phone : undefined,
+        ladderWins:
+          typeof data.ladderWins === "number" ? data.ladderWins : undefined,
+        ladderLosses:
+          typeof data.ladderLosses === "number" ? data.ladderLosses : undefined,
         role:
           data.role === "admin" || data.role === "superuser"
             ? data.role
@@ -267,6 +275,18 @@ export const usersApi = {
       if (Object.hasOwn(updates, "phone")) {
         updateData.phone =
           typeof updates.phone === "string" ? updates.phone : deleteField();
+      }
+      if (Object.hasOwn(updates, "ladderWins")) {
+        updateData.ladderWins =
+          typeof updates.ladderWins === "number"
+            ? updates.ladderWins
+            : deleteField();
+      }
+      if (Object.hasOwn(updates, "ladderLosses")) {
+        updateData.ladderLosses =
+          typeof updates.ladderLosses === "number"
+            ? updates.ladderLosses
+            : deleteField();
       }
       if (updates.role === "admin" || updates.role === "superuser") {
         updateData.role = updates.role;
