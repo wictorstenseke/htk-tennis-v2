@@ -23,7 +23,7 @@ This document defines the standard field naming conventions used across the HTK 
 | `phone` | string | No | User's phone number |
 | `ladderWins` | number | No | Number of ladder match wins |
 | `ladderLosses` | number | No | Number of ladder match losses |
-| `role` | string | No | User role: `"admin"` or `"superuser"` |
+| `role` | string | No | User role: `"user"`, `"admin"`, or `"superuser"` |
 | `createdAt` | Timestamp | No | Account creation timestamp |
 
 ### Bookings Collection (`bookings`)
@@ -87,7 +87,7 @@ export interface User {
   phone?: string;
   ladderWins?: number;
   ladderLosses?: number;
-  role?: "admin" | "superuser";
+  role?: "user" | "admin" | "superuser";
   createdAt?: string; // ISO 8601 string in TypeScript
 }
 ```

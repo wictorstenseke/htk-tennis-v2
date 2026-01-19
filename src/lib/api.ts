@@ -189,7 +189,7 @@ export const usersApi = {
           ladderLosses:
             typeof data.ladderLosses === "number" ? data.ladderLosses : undefined,
           role:
-            data.role === "admin" || data.role === "superuser"
+            data.role === "user" || data.role === "admin" || data.role === "superuser"
               ? data.role
               : undefined,
           createdAt:
@@ -236,7 +236,7 @@ export const usersApi = {
         ladderLosses:
           typeof data.ladderLosses === "number" ? data.ladderLosses : undefined,
         role:
-          data.role === "admin" || data.role === "superuser"
+          data.role === "vanlig" || data.role === "admin" || data.role === "superuser"
             ? data.role
             : undefined,
         createdAt:
@@ -280,10 +280,16 @@ export const usersApi = {
         uid: string;
         email: string;
         displayName?: string;
+        ladderWins: number;
+        ladderLosses: number;
+        role: "user";
         createdAt: Timestamp;
       } = {
         uid,
         email,
+        ladderWins: 0,
+        ladderLosses: 0,
+        role: "user",
         createdAt,
       };
 
@@ -297,6 +303,9 @@ export const usersApi = {
         uid,
         email,
         displayName,
+        ladderWins: 0,
+        ladderLosses: 0,
+        role: "user",
         createdAt: createdAt.toDate().toISOString(),
       };
     } catch (error) {
@@ -342,7 +351,7 @@ export const usersApi = {
             ? updates.ladderLosses
             : deleteField();
       }
-      if (updates.role === "admin" || updates.role === "superuser") {
+      if (updates.role === "user" || updates.role === "admin" || updates.role === "superuser") {
         updateData.role = updates.role;
       } else if (Object.hasOwn(updates, "role") && !updates.role) {
         updateData.role = deleteField();

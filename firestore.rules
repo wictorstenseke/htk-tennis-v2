@@ -33,16 +33,17 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated();
 
-      // Allow users to create/update their own document, but not modify the role field
+      // Allow users to create their own document with role "user", but not "admin" or "superuser"
       allow create: if isAuthenticated()
         && request.auth.uid == userId
-        && !('role' in request.resource.data);
+        && (!('role' in request.resource.data) || request.resource.data.role == 'user');
 
       allow update: if isAuthenticated() && (
-        // User is updating their own data without touching role field
+        // User is updating their own data without changing role to admin/superuser
         (request.auth.uid == userId && (
           (!('role' in request.resource.data) && !('role' in resource.data))
           || ('role' in request.resource.data && 'role' in resource.data && request.resource.data.role == resource.data.role)
+          || ('role' in request.resource.data && request.resource.data.role == 'user')
         ))
         // OR any authenticated user can update ladder stats
         || onlyUpdatingLadderStats()

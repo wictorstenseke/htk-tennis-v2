@@ -59,7 +59,7 @@ export interface User {
   phone?: string;
   ladderWins?: number;
   ladderLosses?: number;
-  role?: "admin" | "superuser";
+  role?: "user" | "admin" | "superuser";
   createdAt?: string;
 }
 

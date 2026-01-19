@@ -162,7 +162,9 @@ export const Admin = () => {
           ? "admin"
           : newRole === "superuser"
             ? "superuser"
-            : undefined;
+            : newRole === "user"
+              ? "user"
+              : undefined;
 
       await updateUser.mutateAsync({
         uid: user.uid,
@@ -351,7 +353,7 @@ export const Admin = () => {
                     <TableBody>
                       {allUsers.map((user) => {
                         const hasChanges = user.uid in userRoles;
-                        const currentRole = userRoles[user.uid] || user.role || "none";
+                        const currentRole = userRoles[user.uid] || user.role || "user";
 
                         return (
                           <TableRow key={user.uid}>
@@ -372,7 +374,7 @@ export const Admin = () => {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="none">Ingen</SelectItem>
+                                    <SelectItem value="user">User</SelectItem>
                                     <SelectItem value="admin">Admin</SelectItem>
                                     <SelectItem value="superuser">
                                       Superuser
@@ -383,7 +385,9 @@ export const Admin = () => {
                                 <Badge variant="secondary">
                                   {user.role === "admin"
                                     ? "Admin"
-                                    : "Superuser"}
+                                    : user.role === "superuser"
+                                      ? "Superuser"
+                                      : "User"}
                                 </Badge>
                               ) : (
                                 <span className="text-muted-foreground">-</span>
