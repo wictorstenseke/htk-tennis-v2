@@ -45,10 +45,7 @@ const buildLadderMatches = (
   ladderId?: string
 ): LadderMatch[] =>
   (bookings ?? [])
-    .filter((booking) => {
-      if (!ladderId) return true;
-      return booking.ladderId === ladderId;
-    })
+    .filter((booking) => !ladderId || booking.ladderId === ladderId)
     .map(bookingToLadderMatch)
     .filter(isLadderMatch)
     .sort((a, b) => {

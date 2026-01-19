@@ -1025,6 +1025,16 @@ export const announcementsApi = {
 /**
  * API Client - Ladders endpoints
  */
+
+/**
+ * Helper function to filter and validate participant IDs
+ */
+const validateParticipantIds = (participants: unknown): string[] => {
+  return Array.isArray(participants)
+    ? participants.filter((id): id is string => typeof id === "string")
+    : [];
+};
+
 export const laddersApi = {
   /**
    * Get all ladders from Firestore
@@ -1061,9 +1071,7 @@ export const laddersApi = {
             data.status === "active" || data.status === "archived"
               ? data.status
               : "active",
-          participants: Array.isArray(data.participants)
-            ? data.participants.filter((id): id is string => typeof id === "string")
-            : [],
+          participants: validateParticipantIds(data.participants),
           createdAt:
             data.createdAt instanceof Timestamp
               ? data.createdAt.toDate().toISOString()
@@ -1127,9 +1135,7 @@ export const laddersApi = {
           data.status === "active" || data.status === "archived"
             ? data.status
             : "active",
-        participants: Array.isArray(data.participants)
-          ? data.participants.filter((id): id is string => typeof id === "string")
-          : [],
+        participants: validateParticipantIds(data.participants),
         createdAt:
           data.createdAt instanceof Timestamp
             ? data.createdAt.toDate().toISOString()
@@ -1165,9 +1171,7 @@ export const laddersApi = {
       }
 
       const data = snapshot.data();
-      const currentParticipants = Array.isArray(data.participants)
-        ? data.participants.filter((id): id is string => typeof id === "string")
-        : [];
+      const currentParticipants = validateParticipantIds(data.participants);
 
       if (currentParticipants.includes(userId)) {
         return;
@@ -1204,9 +1208,7 @@ export const laddersApi = {
       }
 
       const data = snapshot.data();
-      const currentParticipants = Array.isArray(data.participants)
-        ? data.participants.filter((id): id is string => typeof id === "string")
-        : [];
+      const currentParticipants = validateParticipantIds(data.participants);
 
       const updatedParticipants = currentParticipants.filter((id) => id !== userId);
 

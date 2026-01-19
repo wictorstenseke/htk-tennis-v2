@@ -109,18 +109,24 @@ export const buildLadderPlayers = (
   }
 
   const currentPlayerId = currentUser.uid;
-  if (sortedPlayers.some((player) => player.id === currentPlayerId)) {
+  const currentUserInList = sortedPlayers.some((player) => player.id === currentPlayerId);
+  
+  if (currentUserInList) {
     return sortedPlayers;
   }
 
-  if (participantIds && participantIds.length > 0 && !participantIds.includes(currentPlayerId)) {
-    return sortedPlayers;
+  const shouldIncludeCurrentUser = !participantIds || 
+    participantIds.length === 0 || 
+    participantIds.includes(currentPlayerId);
+
+  if (shouldIncludeCurrentUser) {
+    return [
+      ...sortedPlayers,
+      { id: currentPlayerId, name: getPlayerName(currentUser), wins: 0, losses: 0 },
+    ];
   }
 
-  return [
-    ...sortedPlayers,
-    { id: currentPlayerId, name: getPlayerName(currentUser), wins: 0, losses: 0 },
-  ];
+  return sortedPlayers;
 };
 
 export const getChallengeStatus = (
