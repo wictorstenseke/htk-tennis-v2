@@ -95,9 +95,9 @@ export const App = () => {
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold">Alla bokningar</h2>
+        <h2 className="text-2xl font-bold">Bokningar</h2>
         <p className="text-muted-foreground">
-          Visa alla matchbokningar från alla användare
+          Se kommande och tidigare matchbokningar
         </p>
         <div className="mt-4">
           <BookingsList />
