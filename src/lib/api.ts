@@ -276,12 +276,11 @@ export const usersApi = {
 
       const userDoc = doc(db, "users", uid);
       const createdAt = Timestamp.now();
-      const trimmedDisplayName = displayName?.trim();
       const userData = {
         uid,
         email,
+        displayName: displayName || undefined,
         createdAt,
-        ...(trimmedDisplayName ? { displayName: trimmedDisplayName } : {}),
       };
 
       await setDoc(userDoc, userData);
@@ -289,7 +288,7 @@ export const usersApi = {
       return {
         uid,
         email,
-        displayName: trimmedDisplayName || undefined,
+        displayName: displayName || undefined,
         createdAt: createdAt.toDate().toISOString(),
       };
     } catch (error) {

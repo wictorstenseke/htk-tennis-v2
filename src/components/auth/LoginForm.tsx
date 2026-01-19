@@ -119,7 +119,7 @@ export const LoginForm = ({
       if (mode === "signin") {
         await signIn(data.email, data.password);
       } else {
-        await signUp(data.email, data.password, data.displayName?.trim());
+        await signUp(data.email, data.password, data.displayName);
       }
       reset({ email: "", password: "", displayName: "" });
       onSuccess?.();

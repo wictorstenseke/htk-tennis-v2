@@ -41,12 +41,18 @@ export const signUp = async (
     password
   );
   const user = userCredential.user;
+  const userEmail = user.email;
+  const normalizedDisplayName = displayName?.trim() || undefined;
+
+  if (!userEmail) {
+    throw new Error("User email missing after registration.");
+  }
 
   try {
     await usersApi.createUser({
       uid: user.uid,
-      email: user.email ?? email,
-      displayName,
+      email: userEmail,
+      displayName: normalizedDisplayName,
     });
   } catch (error) {
     console.error(
