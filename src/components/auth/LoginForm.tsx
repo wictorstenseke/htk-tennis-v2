@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { KeyboardEvent } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { EyeIcon, ViewOffIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import { FirebaseError } from "firebase/app";
+import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -228,10 +227,11 @@ export const LoginForm = ({
                 onKeyDown={handlePasswordToggleKeyDown}
                 disabled={isLoading}
               >
-                <HugeiconsIcon
-                  icon={isPasswordVisible ? ViewOffIcon : EyeIcon}
-                  size={16}
-                />
+                {isPasswordVisible ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </InputGroupButton>
             </InputGroupAddon>
           </InputGroup>
