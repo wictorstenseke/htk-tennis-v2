@@ -22,14 +22,24 @@ import { signIn, signUp } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const createLoginSchema = (mode: "signin" | "signup") =>
-  z.object({
-    email: z.string().email("Invalid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    displayName:
-      mode === "signup"
-        ? z.string().min(2, "Display name must be at least 2 characters")
-        : z.string().optional(),
-  });
+  z
+    .object({
+      email: z.string().email("Invalid email address"),
+      password: z.string().min(6, "Password must be at least 6 characters"),
+      displayName: z.string().optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (mode === "signup") {
+        const trimmedName = data.displayName?.trim() ?? "";
+        if (trimmedName.length < 2) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["displayName"],
+            message: "Display name must be at least 2 characters",
+          });
+        }
+      }
+    });
 
 type LoginFormData = {
   email: string;
