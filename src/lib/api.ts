@@ -276,10 +276,11 @@ export const usersApi = {
 
       const userDoc = doc(db, "users", uid);
       const createdAt = Timestamp.now();
+      const normalizedDisplayName = displayName || undefined;
       const userData = {
         uid,
         email,
-        displayName: displayName || undefined,
+        displayName: normalizedDisplayName,
         createdAt,
       };
 
@@ -288,7 +289,7 @@ export const usersApi = {
       return {
         uid,
         email,
-        displayName: displayName || undefined,
+        displayName: normalizedDisplayName,
         createdAt: createdAt.toDate().toISOString(),
       };
     } catch (error) {
