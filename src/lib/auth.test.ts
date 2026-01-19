@@ -1,7 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import { signIn, signOut, signUp } from "@/lib/auth";
-
 // Mock Firebase auth module
 vi.mock("firebase/auth", () => ({
   signInWithEmailAndPassword: vi.fn(),
@@ -21,6 +17,10 @@ vi.mock("@/lib/api", () => ({
     createUser: vi.fn(),
   },
 }));
+
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { signIn, signOut, signUp } from "@/lib/auth";
 
 import {
   createUserWithEmailAndPassword,

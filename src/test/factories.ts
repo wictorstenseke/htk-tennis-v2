@@ -87,9 +87,12 @@ export const createMockBooking = (overrides?: Partial<Booking>): Booking => {
 export const createMockLadder = (overrides?: Partial<Ladder>): Ladder => ({
   id: "ladder-123",
   name: "Test Ladder",
-  description: "A test ladder",
-  participants: [],
+  year: 2024,
+  season: "Spring",
+  startDate: new Date().toISOString(),
+  endDate: undefined,
   status: "active",
+  participants: [],
   createdAt: new Date().toISOString(),
   ...overrides,
 });
