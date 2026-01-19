@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { Plus, Save, X } from "lucide-react";
+import { Archive, Plus, Save, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -36,6 +36,11 @@ import {
   useUpdateAppSettingsMutation,
 } from "@/hooks/useAppSettings";
 import {
+  useArchiveLadderMutation,
+  useCreateLadderMutation,
+  useLaddersQuery,
+} from "@/hooks/useLadders";
+import {
   useCurrentUserQuery,
   useUpdateUserMutation,
   useUsersQuery,
@@ -43,13 +48,20 @@ import {
 import { canEditRoles } from "@/lib/admin";
 import { mockedUsers } from "@/lib/mockedUsers";
 
-import type { Announcement, User } from "@/types/api";
+import type { Announcement, Ladder, User } from "@/types/api";
 
 interface AnnouncementFormData {
   title: string;
   body: string;
   enabled: boolean;
   links: Array<{ label: string; url: string }>;
+}
+
+interface LadderFormData {
+  name: string;
+  year: number;
+  season?: string;
+  startDate: string;
 }
 
 export const Admin = () => {
@@ -59,10 +71,13 @@ export const Admin = () => {
   const { data: announcement, isLoading: announcementLoading } =
     useAnnouncementQuery();
   const { data: users, isLoading: usersLoading } = useUsersQuery();
+  const { data: ladders, isLoading: laddersLoading } = useLaddersQuery();
 
   const updateSettings = useUpdateAppSettingsMutation();
   const updateAnnouncement = useUpdateAnnouncementMutation();
   const updateUser = useUpdateUserMutation();
+  const createLadder = useCreateLadderMutation();
+  const archiveLadder = useArchiveLadderMutation();
 
   const [announcementForm, setAnnouncementForm] =
     useState<AnnouncementFormData>({
@@ -71,6 +86,13 @@ export const Admin = () => {
       enabled: false,
       links: [],
     });
+
+  const [ladderForm, setLadderForm] = useState<LadderFormData>({
+    name: "",
+    year: new Date().getFullYear(),
+    season: "",
+    startDate: new Date().toISOString().split("T")[0],
+  });
 
   const [userRoles, setUserRoles] = useState<Record<string, string>>({});
 
@@ -183,6 +205,53 @@ export const Admin = () => {
     }
   };
 
+  const handleCreateLadder = async () => {
+    try {
+      if (!ladderForm.name || !ladderForm.year || !ladderForm.startDate) {
+        toast.error("Fyll i alla obligatoriska fält");
+        return;
+      }
+
+      if (isNaN(ladderForm.year) || ladderForm.year < 1900 || ladderForm.year > 2100) {
+        toast.error("Ange ett giltigt år");
+        return;
+      }
+
+      const newLadder: Omit<Ladder, "id" | "createdAt"> = {
+        name: ladderForm.name,
+        year: ladderForm.year,
+        season: ladderForm.season?.trim() || undefined,
+        startDate: new Date(ladderForm.startDate).toISOString(),
+        status: "active",
+        participants: [],
+      };
+
+      await createLadder.mutateAsync(newLadder);
+      toast.success("Stege skapad");
+      setLadderForm({
+        name: "",
+        year: new Date().getFullYear(),
+        season: "",
+        startDate: new Date().toISOString().split("T")[0],
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Kunde inte skapa stege"
+      );
+    }
+  };
+
+  const handleArchiveLadder = async (ladderId: string, ladderName: string) => {
+    try {
+      await archiveLadder.mutateAsync(ladderId);
+      toast.success(`${ladderName} arkiverad`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Kunde inte arkivera stege"
+      );
+    }
+  };
+
   const allUsers = [...(users || []), ...mockedUsers];
 
   return (
@@ -194,7 +263,7 @@ export const Admin = () => {
         </p>
       </div>
 
-      {settingsLoading || announcementLoading || usersLoading ? (
+      {settingsLoading || announcementLoading || usersLoading || laddersLoading ? (
         <div className="flex items-center justify-center py-12">
           <Spinner className="h-8 w-8" />
           <span className="sr-only">Laddar...</span>
@@ -411,6 +480,176 @@ export const Admin = () => {
                       })}
                     </TableBody>
                   </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Stege Hantering</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {!isSuperUser && (
+                <Alert className="mb-4">
+                  <AlertTitle>Begränsad åtkomst</AlertTitle>
+                  <AlertDescription>
+                    Du kan se steginformation men endast superanvändare kan
+                    skapa och arkivera stegar.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Alla Stegar</h3>
+                {!ladders || ladders.length === 0 ? (
+                  <div className="rounded-lg border border-muted bg-muted/50 p-8 text-center">
+                    <p className="text-muted-foreground">Inga stegar hittades</p>
+                  </div>
+                ) : (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Namn</TableHead>
+                          <TableHead>År</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Deltagare</TableHead>
+                          <TableHead>Startdatum</TableHead>
+                          {isSuperUser && <TableHead>Åtgärder</TableHead>}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {ladders.map((ladder) => {
+                          const isActive = ladder.status === "active";
+                          const startDate = new Date(
+                            ladder.startDate
+                          ).toLocaleDateString("sv-SE");
+
+                          return (
+                            <TableRow key={ladder.id}>
+                              <TableCell className="font-medium">
+                                {ladder.name}
+                              </TableCell>
+                              <TableCell>{ladder.year}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={isActive ? "default" : "secondary"}
+                                >
+                                  {isActive ? "Aktiv" : "Arkiverad"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {ladder.participants.length}
+                              </TableCell>
+                              <TableCell>{startDate}</TableCell>
+                              {isSuperUser && (
+                                <TableCell>
+                                  {isActive && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() =>
+                                        handleArchiveLadder(
+                                          ladder.id,
+                                          ladder.name
+                                        )
+                                      }
+                                      disabled={archiveLadder.isPending}
+                                    >
+                                      <Archive className="mr-2 h-4 w-4" />
+                                      Arkivera
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+
+              {isSuperUser && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Skapa Ny Stege</h3>
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ladder-name">Namn *</Label>
+                      <Input
+                        id="ladder-name"
+                        value={ladderForm.name}
+                        onChange={(e) =>
+                          setLadderForm((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
+                        }
+                        placeholder="t.ex. Stegen 2026"
+                      />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="ladder-year">År *</Label>
+                        <Input
+                          id="ladder-year"
+                          type="number"
+                          min="1900"
+                          max="2100"
+                          value={ladderForm.year}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value, 10);
+                            setLadderForm((prev) => ({
+                              ...prev,
+                              year: isNaN(value) ? new Date().getFullYear() : value,
+                            }));
+                          }}
+                          placeholder="2026"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="ladder-season">Säsong (valfritt)</Label>
+                        <Input
+                          id="ladder-season"
+                          value={ladderForm.season}
+                          onChange={(e) =>
+                            setLadderForm((prev) => ({
+                              ...prev,
+                              season: e.target.value,
+                            }))
+                          }
+                          placeholder="t.ex. vår, höst"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="ladder-startDate">Startdatum *</Label>
+                      <Input
+                        id="ladder-startDate"
+                        type="date"
+                        value={ladderForm.startDate}
+                        onChange={(e) =>
+                          setLadderForm((prev) => ({
+                            ...prev,
+                            startDate: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <Button
+                      onClick={handleCreateLadder}
+                      disabled={createLadder.isPending}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Skapa Stege
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>
