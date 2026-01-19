@@ -41,7 +41,7 @@ export const signUp = async (
     password
   );
   const user = userCredential.user;
-  const userEmail = user.email ?? email;
+  const userEmail = user.email!;
   const normalizedDisplayName = displayName?.trim() || undefined;
 
   try {

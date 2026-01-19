@@ -276,12 +276,20 @@ export const usersApi = {
 
       const userDoc = doc(db, "users", uid);
       const createdAt = Timestamp.now();
-      const userData = {
+      const userData: {
+        uid: string;
+        email: string;
+        displayName?: string;
+        createdAt: Timestamp;
+      } = {
         uid,
         email,
-        displayName,
         createdAt,
       };
+
+      if (displayName) {
+        userData.displayName = displayName;
+      }
 
       await setDoc(userDoc, userData);
 
