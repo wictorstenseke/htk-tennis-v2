@@ -634,8 +634,8 @@ export const Stegen = () => {
                     <CardContent className="space-y-2">
                       {match.winnerId ? (
                         <p className="text-sm font-medium">
-                          <strong className="font-semibold">{winnerName}</strong> vinner matchen mot{" "}
-                          <strong className="font-semibold">{loserName}</strong>
+                          <strong className="font-bold">{winnerName}</strong> vinner matchen mot{" "}
+                          <strong className="font-bold">{loserName}</strong>
                         </p>
                       ) : (
                         <p className="text-sm font-medium">Resultat saknas.</p>
