@@ -21,6 +21,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { signIn, signUp } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
+const DISPLAY_NAME_MIN_LENGTH = 2;
+
 const createLoginSchema = (mode: "signin" | "signup") =>
   z
     .object({
@@ -31,11 +33,11 @@ const createLoginSchema = (mode: "signin" | "signup") =>
     .superRefine((data, ctx) => {
       if (mode === "signup") {
         const trimmedName = data.displayName?.trim() ?? "";
-        if (trimmedName.length < 2) {
+        if (trimmedName.length < DISPLAY_NAME_MIN_LENGTH) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["displayName"],
-            message: "Display name must be at least 2 characters",
+            message: `Display name must be at least ${DISPLAY_NAME_MIN_LENGTH} characters`,
           });
         }
       }
@@ -186,7 +188,7 @@ export const LoginForm = ({
 
         {mode === "signup" && (
           <div className="grid gap-2">
-            <Label htmlFor="displayName">Display name</Label>
+            <Label htmlFor="displayName">Your display name</Label>
             <Input
               id="displayName"
               type="text"
@@ -221,6 +223,7 @@ export const LoginForm = ({
                 type="button"
                 size="icon-sm"
                 aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                aria-pressed={isPasswordVisible}
                 onClick={togglePasswordVisibility}
                 onKeyDown={handlePasswordToggleKeyDown}
                 disabled={isLoading}

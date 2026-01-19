@@ -49,7 +49,10 @@ export const signUp = async (
       displayName,
     });
   } catch (error) {
-    console.error("Failed to create user profile:", error);
+    console.error(
+      "Failed to create user profile; sign-up succeeded without profile data:",
+      error
+    );
   }
 
   return user;

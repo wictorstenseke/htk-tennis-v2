@@ -298,7 +298,7 @@ export const usersApi = {
       }
       throw new ApiException(
         error instanceof Error ? error.message : "Failed to create user",
-        0
+        CLIENT_ERROR_STATUS
       );
     }
   },
