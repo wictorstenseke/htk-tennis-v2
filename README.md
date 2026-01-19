@@ -79,6 +79,7 @@ npm run dev
 The app requires Firebase Authentication and Firestore database. Set up your Firebase project and configure the environment variables as shown above.
 
 For detailed setup instructions:
+
 - **Booking System**: See [`docs/booking-data-structure.md`](./docs/booking-data-structure.md)
 - **Ladder System**: See [`docs/LADDER_SYSTEM.md`](./docs/LADDER_SYSTEM.md)
 
