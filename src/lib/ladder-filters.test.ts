@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildLadderPlayers, type LadderPlayer } from "@/lib/ladder";
+import { buildLadderPlayers } from "@/lib/ladder";
 
 import type { User as AuthUser } from "@/lib/auth";
 import type { User } from "@/types/api";
@@ -30,11 +30,11 @@ describe("buildLadderPlayers with participant filtering", () => {
     },
   ];
 
-  const mockCurrentUser: AuthUser = {
+  const mockCurrentUser = {
     uid: "user2",
     email: "bob@example.com",
     displayName: "Bob",
-  };
+  } as AuthUser;
 
   it("should return all users when no participant filter is provided", () => {
     const result = buildLadderPlayers(mockUsers, mockCurrentUser);
