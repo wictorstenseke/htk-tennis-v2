@@ -1,26 +1,56 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { KeyboardEvent } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FirebaseError } from "firebase/app";
+import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { signIn, signUp } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
+const DISPLAY_NAME_MIN_LENGTH = 2;
 
-type LoginFormData = z.infer<typeof loginSchema>;
+const createLoginSchema = (mode: "signin" | "signup") =>
+  z
+    .object({
+      email: z.string().email("Invalid email address"),
+      password: z.string().min(6, "Password must be at least 6 characters"),
+      displayName: z.string().optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (mode === "signup") {
+        const trimmedName = data.displayName?.trim() ?? "";
+        if (trimmedName.length < DISPLAY_NAME_MIN_LENGTH) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["displayName"],
+            message: `Display name must be at least ${DISPLAY_NAME_MIN_LENGTH} characters`,
+          });
+        }
+      }
+    });
+
+type LoginFormData = {
+  email: string;
+  password: string;
+  displayName?: string;
+};
 
 interface LoginFormProps {
   onSuccess?: () => void;
+  defaultMode?: "signin" | "signup";
 }
 
 const getFirebaseErrorMessage = (error: FirebaseError): string => {
@@ -48,23 +78,37 @@ const getFirebaseErrorMessage = (error: FirebaseError): string => {
   }
 };
 
-export const LoginForm = ({ onSuccess }: LoginFormProps) => {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+export const LoginForm = ({
+  onSuccess,
+  defaultMode = "signin",
+}: LoginFormProps) => {
+  const [mode, setMode] = useState<"signin" | "signup">(defaultMode);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
 
+  const loginSchema = useMemo(() => createLoginSchema(mode), [mode]);
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    clearErrors,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
+      displayName: "",
     },
   });
+
+  useEffect(() => {
+    setMode(defaultMode);
+    setIsPasswordVisible(false);
+    setServerError("");
+    reset({ email: "", password: "", displayName: "" });
+  }, [defaultMode, reset]);
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -74,9 +118,9 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
       if (mode === "signin") {
         await signIn(data.email, data.password);
       } else {
-        await signUp(data.email, data.password);
+        await signUp(data.email, data.password, data.displayName);
       }
-      reset();
+      reset({ email: "", password: "", displayName: "" });
       onSuccess?.();
     } catch (err) {
       if (err instanceof FirebaseError) {
@@ -91,7 +135,22 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
   const toggleMode = () => {
     setMode(mode === "signin" ? "signup" : "signin");
+    setIsPasswordVisible(false);
     setServerError("");
+    clearErrors();
+  };
+
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible((prev) => !prev);
+  };
+
+  const handlePasswordToggleKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>
+  ) => {
+    if (event.key === "Enter" || event.key === "Space") {
+      event.preventDefault();
+      togglePasswordVisibility();
+    }
   };
 
   return (
@@ -126,17 +185,56 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
           )}
         </div>
 
+        {mode === "signup" && (
+          <div className="grid gap-2">
+            <Label htmlFor="displayName">Your display name</Label>
+            <Input
+              id="displayName"
+              type="text"
+              placeholder="Your name"
+              disabled={isLoading}
+              autoComplete="name"
+              aria-invalid={!!errors.displayName}
+              {...register("displayName")}
+            />
+            {errors.displayName && (
+              <p className="text-destructive text-sm font-medium">
+                {errors.displayName.message}
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="grid gap-2">
           <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            disabled={isLoading}
-            autoComplete={mode === "signin" ? "current-password" : "new-password"}
-            aria-invalid={!!errors.password}
-            {...register("password")}
-          />
+          <InputGroup data-disabled={isLoading}>
+            <InputGroupInput
+              id="password"
+              type={isPasswordVisible ? "text" : "password"}
+              placeholder="••••••••"
+              disabled={isLoading}
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              aria-invalid={!!errors.password}
+              {...register("password")}
+            />
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                type="button"
+                size="icon-sm"
+                aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+                aria-pressed={isPasswordVisible}
+                onClick={togglePasswordVisibility}
+                onKeyDown={handlePasswordToggleKeyDown}
+                disabled={isLoading}
+              >
+                {isPasswordVisible ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
           {errors.password && (
             <p className="text-destructive text-sm font-medium">
               {errors.password.message}

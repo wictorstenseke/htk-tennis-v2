@@ -5,6 +5,7 @@ import {
   type User,
 } from "firebase/auth";
 
+import { usersApi } from "./api";
 import { auth, isFirebaseConfigured } from "./firebase";
 
 export type { User };
@@ -27,7 +28,8 @@ export const signIn = async (
 
 export const signUp = async (
   email: string,
-  password: string
+  password: string,
+  displayName?: string
 ): Promise<User> => {
   if (!isFirebaseConfigured || !auth) {
     throw new Error("Firebase är inte konfigurerat för registrering.");
@@ -38,7 +40,24 @@ export const signUp = async (
     email,
     password
   );
-  return userCredential.user;
+  const user = userCredential.user;
+  const userEmail = user.email!;
+  const normalizedDisplayName = displayName?.trim() || undefined;
+
+  try {
+    await usersApi.createUser({
+      uid: user.uid,
+      email: userEmail,
+      displayName: normalizedDisplayName,
+    });
+  } catch (error) {
+    console.error(
+      "Failed to create user profile; sign-up succeeded without profile data:",
+      error
+    );
+  }
+
+  return user;
 };
 
 export const signOut = async (): Promise<void> => {

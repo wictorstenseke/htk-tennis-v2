@@ -6,9 +6,15 @@ interface AuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  defaultMode?: "signin" | "signup";
 }
 
-export const AuthDialog = ({ open, onOpenChange, onSuccess }: AuthDialogProps) => {
+export const AuthDialog = ({
+  open,
+  onOpenChange,
+  onSuccess,
+  defaultMode = "signin",
+}: AuthDialogProps) => {
   const handleSuccess = () => {
     onOpenChange(false);
     onSuccess?.();
@@ -17,7 +23,7 @@ export const AuthDialog = ({ open, onOpenChange, onSuccess }: AuthDialogProps) =
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
-        <LoginForm onSuccess={handleSuccess} />
+        <LoginForm onSuccess={handleSuccess} defaultMode={defaultMode} />
       </DialogContent>
     </Dialog>
   );
