@@ -101,7 +101,7 @@ This feature adds win/loss statistics (e.g., "3W 9L") to each player in the ladd
   - Check each match's `status` field
   - **For planned matches**: Show current UI (winner selection, comment input, action buttons)
   - **For completed matches**: Show read-only result display
-    - Header: Show match date, court, and "Avklarad" badge
+    - Header: Show match date and "Avklarad" badge
     - Body: Display "**[Winner Name]** vann över **[Loser Name]**" (bold player names)
     - If comment exists: Show below result in `text-muted-foreground`
     - No action buttons for completed matches

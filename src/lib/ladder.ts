@@ -25,7 +25,6 @@ export interface LadderMatch {
   bookingId?: string;
   bookingStart?: string;
   bookingEnd?: string;
-  court?: string;
   status: "planned" | "completed";
   winnerId?: string;
   comment?: string;

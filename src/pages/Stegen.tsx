@@ -78,26 +78,6 @@ const formatMatchDate = (start: string, end?: string): string => {
 };
 
 /**
- * Build a human-readable result summary for completed ladder matches.
- */
-const getMatchResultText = (
-  match: LadderMatch,
-  playerA?: LadderPlayer,
-  playerB?: LadderPlayer
-): string => {
-  if (!match.winnerId) {
-    return "Resultat saknas.";
-  }
-
-  const winner = match.winnerId === match.playerAId ? playerA : playerB;
-  const loser = match.winnerId === match.playerAId ? playerB : playerA;
-  const winnerName = winner?.name ?? "Spelare";
-  const loserName = loser?.name ?? "Spelare";
-
-  return `Vinnare: ${winnerName} • Förlorare: ${loserName}`;
-};
-
-/**
  * Prepare ladder stat updates for known users based on updated ladder state.
  */
 const buildStatsUpdates = (
@@ -631,7 +611,11 @@ export const Stegen = () => {
                   ? formatMatchDate(match.bookingStart, match.bookingEnd)
                   : "Tid ej angiven";
               const isCompleted = match.status === "completed";
-              const resultText = getMatchResultText(match, playerA, playerB);
+
+              const winner = match.winnerId === match.playerAId ? playerA : playerB;
+              const loser = match.winnerId === match.playerAId ? playerB : playerA;
+              const winnerName = winner?.name ?? "Spelare";
+              const loserName = loser?.name ?? "Spelare";
 
               return (
                 <Card key={match.id}>
@@ -640,7 +624,6 @@ export const Stegen = () => {
                       <CardTitle className="text-lg">{matchTitle}</CardTitle>
                       <div className="text-sm text-muted-foreground">
                         {matchDate}
-                        {match.court ? ` • ${match.court}` : " • Bana ej angiven"}
                       </div>
                     </div>
                     <Badge variant={isCompleted ? "outline" : "secondary"}>
@@ -649,7 +632,14 @@ export const Stegen = () => {
                   </CardHeader>
                   {isCompleted ? (
                     <CardContent className="space-y-2">
-                      <p className="text-sm font-medium">{resultText}</p>
+                      {match.winnerId ? (
+                        <p className="text-sm font-medium">
+                          <strong className="font-semibold">{winnerName}</strong> vinner matchen mot{" "}
+                          <strong className="font-semibold">{loserName}</strong>
+                        </p>
+                      ) : (
+                        <p className="text-sm font-medium">Resultat saknas.</p>
+                      )}
                       {match.comment && (
                         <p className="text-sm text-muted-foreground">
                           {match.comment}
