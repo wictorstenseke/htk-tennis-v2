@@ -82,7 +82,8 @@ const isInvalidMatchResult = (winnerId: string, loserId: string) => {
 
 export const buildLadderPlayers = (
   users: User[] | undefined,
-  currentUser: AuthUser | null
+  currentUser: AuthUser | null,
+  participantIds?: string[]
 ): LadderPlayer[] => {
   const mappedUsers =
     users && users.length > 0
@@ -93,7 +94,13 @@ export const buildLadderPlayers = (
         }))
       : mockLadderPlayers;
 
-  const sortedPlayers = [...mappedUsers].sort((a, b) =>
+  let filteredUsers = mappedUsers;
+  if (participantIds && participantIds.length > 0) {
+    const participantSet = new Set(participantIds);
+    filteredUsers = mappedUsers.filter((user) => participantSet.has(user.id));
+  }
+
+  const sortedPlayers = [...filteredUsers].sort((a, b) =>
     a.name.localeCompare(b.name, "sv")
   );
 
@@ -102,14 +109,24 @@ export const buildLadderPlayers = (
   }
 
   const currentPlayerId = currentUser.uid;
-  if (sortedPlayers.some((player) => player.id === currentPlayerId)) {
+  const currentUserInList = sortedPlayers.some((player) => player.id === currentPlayerId);
+  
+  if (currentUserInList) {
     return sortedPlayers;
   }
 
-  return [
-    ...sortedPlayers,
-    { id: currentPlayerId, name: getPlayerName(currentUser), wins: 0, losses: 0 },
-  ];
+  const shouldIncludeCurrentUser = !participantIds || 
+    participantIds.length === 0 || 
+    participantIds.includes(currentPlayerId);
+
+  if (shouldIncludeCurrentUser) {
+    return [
+      ...sortedPlayers,
+      { id: currentPlayerId, name: getPlayerName(currentUser), wins: 0, losses: 0 },
+    ];
+  }
+
+  return sortedPlayers;
 };
 
 export const getChallengeStatus = (

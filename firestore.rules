@@ -68,7 +68,8 @@ service cloud.firestore {
         && (!('playerBId' in request.resource.data) || request.resource.data.playerBId is string)
         && (!('ladderStatus' in request.resource.data) || request.resource.data.ladderStatus in ['planned', 'completed'])
         && (!('winnerId' in request.resource.data) || request.resource.data.winnerId is string)
-        && (!('comment' in request.resource.data) || request.resource.data.comment is string);
+        && (!('comment' in request.resource.data) || request.resource.data.comment is string)
+        && (!('ladderId' in request.resource.data) || request.resource.data.ladderId is string);
 
       // Allow users to update their own bookings
       allow update: if isAuthenticated()
@@ -95,6 +96,27 @@ service cloud.firestore {
 
       // Only admins and superusers can create/update announcements
       allow write: if isAdminOrSuperUser();
+    }
+
+    // Ladders collection - manages ladder seasons and participants
+    match /ladders/{ladderId} {
+      // All authenticated users can read ladders
+      allow read: if isAuthenticated();
+
+      // Only admins and superusers can create or delete ladders
+      allow create, delete: if isAdminOrSuperUser();
+
+      // Users can update participants if they are adding themselves
+      // (existing participants are preserved and only the authenticated user is added)
+      allow update: if isAuthenticated() && (
+        // Check that all existing participants are still present
+        request.resource.data.participants.hasAll(resource.data.participants)
+        // And only the authenticated user was added
+        && request.resource.data.participants.removeAll(resource.data.participants).hasOnly([request.auth.uid])
+      );
+
+      // Admins can update anything
+      allow update: if isAdminOrSuperUser();
     }
   }
 }

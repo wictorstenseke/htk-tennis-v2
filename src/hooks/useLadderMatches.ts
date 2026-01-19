@@ -40,8 +40,12 @@ const matchesAreEqual = (
   });
 };
 
-const buildLadderMatches = (bookings: Booking[] | undefined): LadderMatch[] =>
+const buildLadderMatches = (
+  bookings: Booking[] | undefined,
+  ladderId?: string
+): LadderMatch[] =>
   (bookings ?? [])
+    .filter((booking) => !ladderId || booking.ladderId === ladderId)
     .map(bookingToLadderMatch)
     .filter(isLadderMatch)
     .sort((a, b) => {
@@ -50,12 +54,12 @@ const buildLadderMatches = (bookings: Booking[] | undefined): LadderMatch[] =>
       return bTime - aTime;
     });
 
-export const useLadderMatchesQuery = () => {
+export const useLadderMatchesQuery = (ladderId?: string) => {
   const bookingsQuery = useBookingsQuery();
   const queryClient = useQueryClient();
   const ladderMatches = useMemo(
-    () => buildLadderMatches(bookingsQuery.data),
-    [bookingsQuery.data]
+    () => buildLadderMatches(bookingsQuery.data, ladderId),
+    [bookingsQuery.data, ladderId]
   );
 
   useEffect(() => {

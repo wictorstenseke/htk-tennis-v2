@@ -28,3 +28,7 @@ dist-ssr
 # TanStack Router
 routeTree.gen.ts
 .tanstack
+
+# Firebase Admin Service Account Keys
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
