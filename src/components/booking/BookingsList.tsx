@@ -4,6 +4,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { useBookingsQuery } from "@/hooks/useBookings";
 import { useUsersQuery } from "@/hooks/useUsers";
 
+import type { Booking } from "@/types/api";
+
 const formatTime = (isoString: string): string => {
   const date = new Date(isoString);
   return date.toLocaleTimeString("en-US", {
@@ -83,8 +85,8 @@ export const BookingsList = () => {
   const { upcomingGrouped, historyGrouped } = useMemo(() => {
     if (!bookings) {
       return {
-        upcomingGrouped: new Map<string, typeof bookings>(),
-        historyGrouped: new Map<string, typeof bookings>(),
+        upcomingGrouped: new Map<string, Booking[]>(),
+        historyGrouped: new Map<string, Booking[]>(),
       };
     }
 
@@ -113,7 +115,7 @@ export const BookingsList = () => {
     });
 
     // Group upcoming bookings by date
-    const upcomingGrouped = new Map<string, typeof bookings>();
+    const upcomingGrouped = new Map<string, Booking[]>();
     upcoming.forEach((booking) => {
       const dateKey = getDateKey(booking.startDate);
       const existing = upcomingGrouped.get(dateKey) || [];
@@ -121,7 +123,7 @@ export const BookingsList = () => {
     });
 
     // Group history bookings by date
-    const historyGrouped = new Map<string, typeof bookings>();
+    const historyGrouped = new Map<string, Booking[]>();
     history.forEach((booking) => {
       const dateKey = getDateKey(booking.startDate);
       const existing = historyGrouped.get(dateKey) || [];
@@ -190,7 +192,7 @@ export const BookingsList = () => {
 
   const renderBookingSection = (
     dateKeys: string[],
-    groupedData: Map<string, typeof bookings>
+    groupedData: Map<string, Booking[]>
   ) => {
     if (dateKeys.length === 0) {
       return (
