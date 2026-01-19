@@ -73,7 +73,7 @@ interface BookingFormProps {
   onBookingCreated?: (booking: Booking) => void;
   bookingMetadata?: Pick<
     CreateBookingInput,
-    "playerAId" | "playerBId" | "ladderStatus" | "winnerId" | "comment"
+    "playerAId" | "playerBId" | "ladderStatus" | "winnerId" | "comment" | "ladderId"
   >;
   successMessage?: string;
 }

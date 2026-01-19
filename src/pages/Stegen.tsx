@@ -26,6 +26,10 @@ import {
   useLadderMatchesQuery,
   useUpdateLadderMatchMutation,
 } from "@/hooks/useLadderMatches";
+import {
+  useActiveLadderQuery,
+  useJoinLadderMutation,
+} from "@/hooks/useLadders";
 import { useUpdateUserStatsMutation, useUsersQuery } from "@/hooks/useUsers";
 import {
   applyLadderResultWithStats,
@@ -120,13 +124,19 @@ export const Stegen = () => {
   const { user } = useAuth();
   const { data: users, isLoading, error } = useUsersQuery();
   const {
+    data: activeLadder,
+    isLoading: ladderLoading,
+    error: ladderError,
+  } = useActiveLadderQuery();
+  const {
     data: ladderMatches = [],
     isLoading: matchesLoading,
     error: matchesError,
-  } = useLadderMatchesQuery();
+  } = useLadderMatchesQuery(activeLadder?.id);
   const deleteLadderMatchMutation = useDeleteLadderMatchMutation();
   const updateLadderMatchMutation = useUpdateLadderMatchMutation();
   const updateUserStatsMutation = useUpdateUserStatsMutation();
+  const joinLadderMutation = useJoinLadderMutation();
   const [ladderOverride, setLadderOverride] = useState<LadderPlayer[] | null>(
     null
   );
@@ -138,6 +148,11 @@ export const Stegen = () => {
     {}
   );
   const [cancelingMatchId, setCancelingMatchId] = useState<string | null>(null);
+
+  const isUserParticipant =
+    user && activeLadder
+      ? activeLadder.participants.includes(user.uid)
+      : false;
 
   const basePlayers = useMemo(() => {
     if (isLoading) {
@@ -152,8 +167,12 @@ export const Stegen = () => {
       const additionalUsers = users.filter((u) => !mockedUserIds.has(u.uid));
       allUsers.push(...additionalUsers);
     }
-    return buildLadderPlayers(allUsers, user);
-  }, [isLoading, users, user]);
+    return buildLadderPlayers(
+      allUsers,
+      user,
+      activeLadder?.participants
+    );
+  }, [isLoading, users, user, activeLadder?.participants]);
 
   const ladder = useMemo(() => {
     if (basePlayers.length === 0) {
@@ -187,11 +206,40 @@ export const Stegen = () => {
       ? ladder.findIndex((player) => player.id === currentPlayerId)
       : -1;
   const matchCount = ladderMatches.length;
-  const isContentLoading = isLoading || matchesLoading;
+  const isContentLoading = isLoading || matchesLoading || ladderLoading;
+
+  const handleJoinLadder = () => {
+    if (!user || !activeLadder) {
+      toast.error("Kunde inte gå med i stegen.");
+      return;
+    }
+
+    joinLadderMutation.mutate(
+      { ladderId: activeLadder.id, userId: user.uid },
+      {
+        onSuccess: () => {
+          toast.success(`Du har gått med i ${activeLadder.name}!`);
+        },
+        onError: (error) => {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Kunde inte gå med i stegen."
+          );
+        },
+      }
+    );
+  };
 
   const handleSelectOpponent = (opponent: LadderPlayer) => {
     if (!user) {
       setChallengeMessage("Logga in för att kunna utmana en spelare.");
+      setSelectedOpponent(null);
+      return;
+    }
+
+    if (!isUserParticipant) {
+      setChallengeMessage("Du måste gå med i stegen för att kunna utmana en spelare.");
       setSelectedOpponent(null);
       return;
     }
@@ -343,17 +391,36 @@ export const Stegen = () => {
     <div className="space-y-8">
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-bold">Stegen</h1>
-          {currentPlayerPosition >= 0 && (
+          <h1 className="text-3xl font-bold">
+            {activeLadder ? activeLadder.name : "Stegen"}
+          </h1>
+          {currentPlayerPosition >= 0 && isUserParticipant && (
             <Badge variant="secondary">
               Din placering: {currentPlayerPosition + 1}
             </Badge>
           )}
+          {!isUserParticipant && user && (
+            <Badge variant="outline">Du är inte med i stegen</Badge>
+          )}
         </div>
         <p className="text-muted-foreground">
-          Utmana spelare upp till fyra placeringar ovanför dig och boka match direkt.
+          {isUserParticipant
+            ? "Utmana spelare upp till fyra placeringar ovanför dig och boka match direkt."
+            : "Gå med i stegen för att kunna utmana spelare och delta i turneringen."}
         </p>
       </div>
+
+      {ladderError && (
+        <Alert variant="destructive">
+          <AlertCircle />
+          <AlertTitle>Fel vid laddning av stegen</AlertTitle>
+          <AlertDescription>
+            {ladderError instanceof Error
+              ? ladderError.message
+              : "Ett fel uppstod vid hämtning av stegen."}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {error && (
         <Alert variant="destructive">
@@ -379,6 +446,16 @@ export const Stegen = () => {
         </Alert>
       )}
 
+      {!activeLadder && !ladderLoading && (
+        <Alert>
+          <AlertCircle />
+          <AlertTitle>Ingen aktiv stege</AlertTitle>
+          <AlertDescription>
+            Det finns för närvarande ingen aktiv stege. Kontakta en administratör för att skapa en ny stege.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {usingMockPlayers && (
         <Alert>
           <AlertCircle />
@@ -389,10 +466,36 @@ export const Stegen = () => {
         </Alert>
       )}
 
+      {activeLadder && user && !isUserParticipant && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Gå med i {activeLadder.name}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              För att kunna utmana spelare och delta i turneringen måste du gå med i stegen.
+            </p>
+            <Button
+              onClick={handleJoinLadder}
+              disabled={joinLadderMutation.isPending}
+            >
+              {joinLadderMutation.isPending ? "Går med..." : "Gå med i stegen"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Stegen</h2>
-          <Badge variant="outline">{ladder.length} spelare</Badge>
+          <div className="flex gap-2">
+            {activeLadder && (
+              <Badge variant="outline">
+                {activeLadder.participants.length} deltagare
+              </Badge>
+            )}
+            <Badge variant="outline">{ladder.length} spelare</Badge>
+          </div>
         </div>
         {ladder.length === 0 ? (
           <div className="rounded-lg border border-muted bg-muted/50 p-8 text-center text-muted-foreground">
@@ -490,6 +593,7 @@ export const Stegen = () => {
                   playerAId: user.uid,
                   playerBId: selectedOpponent.id,
                   ladderStatus: "planned",
+                  ladderId: activeLadder?.id,
                 }}
                 successMessage="Utmaning skapad och match bokad."
               />
