@@ -148,11 +148,7 @@ export const LoginForm = ({
   const handlePasswordToggleKeyDown = (
     event: KeyboardEvent<HTMLButtonElement>
   ) => {
-    if (
-      event.key === "Enter" ||
-      event.key === " " ||
-      event.key === "Spacebar"
-    ) {
+    if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       togglePasswordVisibility();
     }

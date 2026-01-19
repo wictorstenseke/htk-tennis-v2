@@ -41,12 +41,8 @@ export const signUp = async (
     password
   );
   const user = userCredential.user;
-  const userEmail = user.email;
+  const userEmail = user.email ?? email;
   const normalizedDisplayName = displayName?.trim() || undefined;
-
-  if (!userEmail) {
-    throw new Error("User email missing after registration.");
-  }
 
   try {
     await usersApi.createUser({
