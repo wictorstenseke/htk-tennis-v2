@@ -76,6 +76,8 @@ interface BookingFormProps {
     "playerAId" | "playerBId" | "ladderStatus" | "winnerId" | "comment" | "ladderId"
   >;
   successMessage?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const BookingForm = ({
@@ -83,11 +85,17 @@ export const BookingForm = ({
   onBookingCreated,
   bookingMetadata,
   successMessage = "Match bokad",
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: BookingFormProps) => {
   const { user } = useAuth();
   const isMobile = useMediaQuery("(max-width: 640px)");
   const { data: users } = useUsersQuery();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? controlledOnOpenChange! : setInternalOpen;
   const [startDate, setStartDate] = useState(() => {
     const now = new Date();
     now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15);

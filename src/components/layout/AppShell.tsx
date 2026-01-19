@@ -14,6 +14,8 @@ import {
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import { AuthDialog } from "@/components/auth/AuthDialog";
+import { BookingForm } from "@/components/booking/BookingForm";
+import { CommandPalette } from "@/components/CommandPalette";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -46,6 +48,7 @@ export function AppShell({ children }: AppShellProps) {
   const { data: currentUser } = useCurrentUserQuery();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   const isAdmin = canAccessAdmin(currentUser || null);
@@ -57,6 +60,10 @@ export function AppShell({ children }: AppShellProps) {
     } catch (error) {
       console.error("Error signing out:", error);
     }
+  };
+
+  const handleOpenBookingDialog = () => {
+    setBookingDialogOpen(true);
   };
 
   const handleAuthSuccess = () => {
@@ -110,7 +117,7 @@ export function AppShell({ children }: AppShellProps) {
                   activeProps={{ className: "bg-muted text-accent-foreground" }}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  Boka
+                  Bokningar
                 </Link>
                 <Link
                   to="/stegen"
@@ -230,7 +237,7 @@ export function AppShell({ children }: AppShellProps) {
                           className="flex items-center gap-2 text-md font-semibold"
                         >
                           <CalendarIcon className="h-4 w-4" />
-                          Boka
+                          Bokningar
                         </Link>
                         <Link
                           to="/stegen"
@@ -303,6 +310,18 @@ export function AppShell({ children }: AppShellProps) {
         onOpenChange={setAuthDialogOpen}
         onSuccess={handleAuthSuccess}
       />
+
+      <CommandPalette
+        onOpenBookingDialog={handleOpenBookingDialog}
+        onSignOut={handleSignOut}
+      />
+
+      <div className="hidden">
+        <BookingForm
+          open={bookingDialogOpen}
+          onOpenChange={setBookingDialogOpen}
+        />
+      </div>
 
       {/* Main Content */}
       <main className="flex-1">
