@@ -1,8 +1,12 @@
 # Ladder Stats and Combined Matches Section
 
+> **Status:** ✅ **IMPLEMENTED** (January 2026)
+>
+> This feature has been fully implemented and deployed to production. Security rules updated to allow ladder stats updates across users.
+
 ## Overview
 
-This feature adds win/loss statistics (e.g., "3W 9L") to each player in the ladder and combines planned/completed matches into a single chronological section. Stats will be persisted in Firestore and updated when matches are completed.
+This feature adds win/loss statistics (e.g., "3W 9L") to each player in the ladder and combines planned/completed matches into a single chronological section. Stats are persisted in Firestore and updated when matches are completed.
 
 ## Current State Analysis
 
@@ -166,18 +170,26 @@ sequenceDiagram
 
 ## Testing Checklist
 
-After implementation:
+Implementation verified:
 
-- [ ] Stats display correctly in ladder table (0W 0L for new players)
-- [ ] Stats update when match result is submitted
-- [ ] Both players' stats update correctly (winner +1W, loser +1L)
-- [ ] Planned matches show interactive form
-- [ ] Completed matches show read-only result
-- [ ] Match comments display when present
-- [ ] Combined matches section shows all matches chronologically
-- [ ] Ladder positions update after match completion
-- [ ] Error handling works (rollback on failure)
-- [ ] Responsive layout works on mobile
+- [x] Stats display correctly in ladder table (format: W–L)
+- [x] Stats update when match result is submitted
+- [x] Both players' stats update correctly (winner +1W, loser +1L)
+- [x] Planned matches show interactive form
+- [x] Completed matches show read-only result
+- [x] Match comments display when present
+- [x] Combined matches section shows all matches chronologically
+- [x] Ladder positions update after match completion
+- [x] Error handling works (rollback on failure)
+- [x] Responsive layout works on mobile
+
+## Implementation Notes
+
+### Security Rules
+The Firestore security rules were updated to allow any authenticated user to update `ladderWins` and `ladderLosses` fields on any user document. This is necessary because when User A reports a match result, the system needs to update stats for both User A (winner) and User B (loser).
+
+### Mock Users
+The application includes mock users (`mock-user-1` through `mock-user-6`) for testing purposes. These users do not have corresponding Firestore documents, so stats updates for matches involving mock users are filtered out by the `buildStatsUpdates()` function.
 
 ## Future Enhancements (Not in This Implementation)
 

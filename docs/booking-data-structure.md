@@ -49,14 +49,15 @@ export interface Booking {
 - The API layer handles both formats for backward compatibility
 - New bookings should always use `startDate`/`endDate`
 
-## Firestore Indexes Required
+## Firestore Indexes
 
-For efficient querying, create these indexes:
+Firestore automatically creates single-field indexes, so no composite indexes are currently required for the bookings collection.
 
-1. **Collection**: `bookings`
-   - **Fields**: `startDate` (Descending)
-   - **Purpose**: List all bookings sorted by date
+**Automatic Indexes:**
+- `startDate` (Ascending/Descending) - automatically available
+- All other single fields - automatically indexed
 
-2. **Collection**: `bookings`
-   - **Fields**: `startDate` (Ascending)
-   - **Purpose**: Query bookings by date range
+**Composite Indexes:**
+- None required at this time
+
+**Note:** A legacy composite index (`status` + `startTime`) exists in the deployed project but is no longer used. It can be safely deleted via the Firebase Console if desired.

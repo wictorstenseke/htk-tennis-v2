@@ -22,6 +22,13 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superuser'];
     }
 
+    // Helper function to check if only ladder stats are being updated
+    function onlyUpdatingLadderStats() {
+      return request.resource.data.diff(resource.data)
+        .affectedKeys()
+        .hasOnly(['ladderWins', 'ladderLosses']);
+    }
+
     // Users collection
     match /users/{userId} {
       allow read: if isAuthenticated();
@@ -31,14 +38,17 @@ service cloud.firestore {
         && request.auth.uid == userId
         && !('role' in request.resource.data);
 
-      allow update: if isAuthenticated()
-        && request.auth.uid == userId
-        && (
-          // User is updating their own data without touching role field
+      allow update: if isAuthenticated() && (
+        // User is updating their own data without touching role field
+        (request.auth.uid == userId && (
           (!('role' in request.resource.data) && !('role' in resource.data))
           || ('role' in request.resource.data && 'role' in resource.data && request.resource.data.role == resource.data.role)
-          || isSuperUser()
-        );
+        ))
+        // OR any authenticated user can update ladder stats
+        || onlyUpdatingLadderStats()
+        // OR superuser can update anything
+        || isSuperUser()
+      );
     }
 
     // Bookings collection - authenticated users can manage bookings
