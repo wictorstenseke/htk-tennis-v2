@@ -89,3 +89,124 @@ describe("formatPlayerStats", () => {
     expect(stats).toBe("3–1");
   });
 });
+
+describe("getChallengeStatus edge cases", () => {
+  it("should reject challenge when trying to challenge yourself", () => {
+    const ladder: LadderPlayer[] = [
+      { id: "p1", name: "Player 1", wins: 0, losses: 0 },
+    ];
+
+    const status = getChallengeStatus(ladder, "p1", "p1");
+
+    expect(status.eligible).toBe(false);
+    expect(status.reason).toBe("self");
+  });
+
+  it("should reject challenge when challenger is not in ladder", () => {
+    const ladder: LadderPlayer[] = [
+      { id: "p1", name: "Player 1", wins: 0, losses: 0 },
+      { id: "p2", name: "Player 2", wins: 0, losses: 0 },
+    ];
+
+    const status = getChallengeStatus(ladder, "unknown", "p1");
+
+    expect(status.eligible).toBe(false);
+    expect(status.reason).toBe("missing");
+  });
+
+  it("should reject challenge when opponent is not in ladder", () => {
+    const ladder: LadderPlayer[] = [
+      { id: "p1", name: "Player 1", wins: 0, losses: 0 },
+      { id: "p2", name: "Player 2", wins: 0, losses: 0 },
+    ];
+
+    const status = getChallengeStatus(ladder, "p2", "unknown");
+
+    expect(status.eligible).toBe(false);
+    expect(status.reason).toBe("missing");
+  });
+
+  it("should reject challenge when challenger is higher ranked than opponent", () => {
+    const ladder: LadderPlayer[] = [
+      { id: "p1", name: "Player 1", wins: 0, losses: 0 },
+      { id: "p2", name: "Player 2", wins: 0, losses: 0 },
+    ];
+
+    const status = getChallengeStatus(ladder, "p1", "p2");
+
+    expect(status.eligible).toBe(false);
+    expect(status.reason).toBe("lower-ranked");
+  });
+
+  it("should work with single player ladder", () => {
+    const ladder: LadderPlayer[] = [
+      { id: "p1", name: "Player 1", wins: 0, losses: 0 },
+    ];
+
+    const status = getChallengeStatus(ladder, "p1", "p1");
+
+    expect(status.eligible).toBe(false);
+    expect(status.reason).toBe("self");
+  });
+
+  it("should work with empty ladder", () => {
+    const ladder: LadderPlayer[] = [];
+
+    const status = getChallengeStatus(ladder, "p1", "p2");
+
+    expect(status.eligible).toBe(false);
+    expect(status.reason).toBe("missing");
+  });
+});
+
+describe("applyLadderResult edge cases", () => {
+  it("should return unchanged ladder when winner not found", () => {
+    const ladder: LadderPlayer[] = [
+      { id: "a", name: "Anna", wins: 2, losses: 1 },
+      { id: "b", name: "Bjorn", wins: 1, losses: 3 },
+    ];
+
+    const updated = applyLadderResult(ladder, "unknown", "b");
+
+    expect(updated).toEqual(ladder);
+  });
+
+  it("should return unchanged ladder when loser not found", () => {
+    const ladder: LadderPlayer[] = [
+      { id: "a", name: "Anna", wins: 2, losses: 1 },
+      { id: "b", name: "Bjorn", wins: 1, losses: 3 },
+    ];
+
+    const updated = applyLadderResult(ladder, "a", "unknown");
+
+    expect(updated).toEqual(ladder);
+  });
+
+  it("should return unchanged ladder when winner and loser are same", () => {
+    const ladder: LadderPlayer[] = [
+      { id: "a", name: "Anna", wins: 2, losses: 1 },
+    ];
+
+    const updated = applyLadderResult(ladder, "a", "a");
+
+    expect(updated).toEqual(ladder);
+  });
+
+  it("should handle single player ladder", () => {
+    const ladder: LadderPlayer[] = [
+      { id: "a", name: "Anna", wins: 2, losses: 1 },
+    ];
+
+    const updated = applyLadderResult(ladder, "a", "a");
+
+    expect(updated).toEqual(ladder);
+  });
+
+  it("should handle empty ladder", () => {
+    const ladder: LadderPlayer[] = [];
+
+    const updated = applyLadderResult(ladder, "a", "b");
+
+    expect(updated).toEqual([]);
+  });
+});
