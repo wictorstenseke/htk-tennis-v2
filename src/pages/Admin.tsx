@@ -212,10 +212,15 @@ export const Admin = () => {
         return;
       }
 
+      if (isNaN(ladderForm.year) || ladderForm.year < 1900 || ladderForm.year > 2100) {
+        toast.error("Ange ett giltigt år");
+        return;
+      }
+
       const newLadder: Omit<Ladder, "id" | "createdAt"> = {
         name: ladderForm.name,
         year: ladderForm.year,
-        season: ladderForm.season || undefined,
+        season: ladderForm.season?.trim() || undefined,
         startDate: new Date(ladderForm.startDate).toISOString(),
         status: "active",
         participants: [],
@@ -592,13 +597,16 @@ export const Admin = () => {
                         <Input
                           id="ladder-year"
                           type="number"
+                          min="1900"
+                          max="2100"
                           value={ladderForm.year}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value, 10);
                             setLadderForm((prev) => ({
                               ...prev,
-                              year: parseInt(e.target.value, 10),
-                            }))
-                          }
+                              year: isNaN(value) ? new Date().getFullYear() : value,
+                            }));
+                          }}
                           placeholder="2026"
                         />
                       </div>
