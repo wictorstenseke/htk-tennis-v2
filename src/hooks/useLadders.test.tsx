@@ -17,8 +17,6 @@ import {
   useLeaveLadderMutation,
 } from "./useLadders";
 
-import type { Ladder } from "@/types/api";
-
 // Mock the API module
 vi.mock("@/lib/api", () => ({
   laddersApi: {

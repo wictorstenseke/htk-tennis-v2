@@ -49,9 +49,11 @@ describe("useAuth", () => {
       email: "test@example.com",
     });
 
-    vi.mocked(onAuthStateChanged).mockImplementation((auth, callback) => {
+    vi.mocked(onAuthStateChanged).mockImplementation((_auth, callback) => {
       // Simulate user being signed in
-      setTimeout(() => callback(mockUser as any), 0);
+      if (typeof callback === "function") {
+        setTimeout(() => callback(mockUser as any), 0);
+      }
       return () => {};
     });
 
@@ -66,9 +68,11 @@ describe("useAuth", () => {
   });
 
   it("should set user to null when auth state changes to signed out", async () => {
-    vi.mocked(onAuthStateChanged).mockImplementation((auth, callback) => {
+    vi.mocked(onAuthStateChanged).mockImplementation((_auth, callback) => {
       // Simulate user being signed out
-      setTimeout(() => callback(null), 0);
+      if (typeof callback === "function") {
+        setTimeout(() => callback(null), 0);
+      }
       return () => {};
     });
 
@@ -100,8 +104,10 @@ describe("useAuth", () => {
   it("should handle multiple auth state changes", async () => {
     let authCallback: ((user: any) => void) | null = null;
 
-    vi.mocked(onAuthStateChanged).mockImplementation((auth, callback) => {
-      authCallback = callback;
+    vi.mocked(onAuthStateChanged).mockImplementation((_auth, callback) => {
+      if (typeof callback === "function") {
+        authCallback = callback;
+      }
       return () => {};
     });
 

@@ -13,10 +13,9 @@ import { createMockLadderMatch } from "@/test/factories";
 import {
   useUpdateLadderMatchMutation,
   useDeleteLadderMatchMutation,
-  ladderMatchKeys,
 } from "./useLadderMatches";
 
-import type { Booking, LadderStatus } from "@/types/api";
+import type { LadderStatus } from "@/types/api";
 
 // Mock the API module
 vi.mock("@/lib/api", () => ({
