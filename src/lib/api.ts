@@ -22,6 +22,7 @@ import type {
   Booking,
   CreateBookingInput,
   CreatePostInput,
+  Ladder,
   PaginationParams,
   Post,
   UpdatePostInput,
@@ -445,6 +446,7 @@ const normalizeBookingFromFirestore = (
       : undefined;
   const winnerId = typeof data.winnerId === "string" ? data.winnerId : undefined;
   const comment = typeof data.comment === "string" ? data.comment : undefined;
+  const ladderId = typeof data.ladderId === "string" ? data.ladderId : undefined;
 
   return {
     id: docId,
@@ -457,6 +459,7 @@ const normalizeBookingFromFirestore = (
     ladderStatus,
     winnerId,
     comment,
+    ladderId,
   };
 };
 
@@ -712,6 +715,9 @@ export const bookingsApi = {
           ? { winnerId: data.winnerId }
           : {}),
         ...(typeof data.comment === "string" ? { comment: data.comment } : {}),
+        ...(typeof data.ladderId === "string" && data.ladderId !== ""
+          ? { ladderId: data.ladderId }
+          : {}),
       };
 
       const docRef = await addDoc(bookingsCollection, bookingData);
@@ -727,6 +733,7 @@ export const bookingsApi = {
         ladderStatus: data.ladderStatus,
         winnerId: data.winnerId,
         comment: data.comment,
+        ladderId: data.ladderId,
       };
     } catch (error) {
       console.error("Error creating booking:", error);
@@ -1009,6 +1016,277 @@ export const announcementsApi = {
       }
       throw new ApiException(
         error instanceof Error ? error.message : "Failed to update announcement",
+        0
+      );
+    }
+  },
+};
+
+/**
+ * API Client - Ladders endpoints
+ */
+export const laddersApi = {
+  /**
+   * Get all ladders from Firestore
+   */
+  getLadders: async (): Promise<Ladder[]> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const laddersCollection = collection(db, "ladders");
+      const snapshot = await getDocs(laddersCollection);
+
+      return snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: typeof data.name === "string" ? data.name : "",
+          year: typeof data.year === "number" ? data.year : 0,
+          season: typeof data.season === "string" ? data.season : undefined,
+          startDate:
+            data.startDate instanceof Timestamp
+              ? data.startDate.toDate().toISOString()
+              : typeof data.startDate === "string"
+                ? data.startDate
+                : "",
+          endDate:
+            data.endDate instanceof Timestamp
+              ? data.endDate.toDate().toISOString()
+              : typeof data.endDate === "string"
+                ? data.endDate
+                : undefined,
+          status:
+            data.status === "active" || data.status === "archived"
+              ? data.status
+              : "active",
+          participants: Array.isArray(data.participants)
+            ? data.participants.filter((id): id is string => typeof id === "string")
+            : [],
+          createdAt:
+            data.createdAt instanceof Timestamp
+              ? data.createdAt.toDate().toISOString()
+              : typeof data.createdAt === "string"
+                ? data.createdAt
+                : new Date().toISOString(),
+        };
+      });
+    } catch (error) {
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to fetch ladders",
+        0
+      );
+    }
+  },
+
+  /**
+   * Get active ladder (status === "active")
+   */
+  getActiveLadder: async (): Promise<Ladder | null> => {
+    const ladders = await laddersApi.getLadders();
+    const activeLadders = ladders.filter((ladder) => ladder.status === "active");
+    return activeLadders.length > 0 ? activeLadders[0] : null;
+  },
+
+  /**
+   * Get a specific ladder by ID
+   */
+  getLadder: async (ladderId: string): Promise<Ladder> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const ladderDoc = doc(db, "ladders", ladderId);
+      const snapshot = await getDoc(ladderDoc);
+
+      if (!snapshot.exists()) {
+        throw new ApiException("Stegen hittades inte", 404);
+      }
+
+      const data = snapshot.data();
+      return {
+        id: snapshot.id,
+        name: typeof data.name === "string" ? data.name : "",
+        year: typeof data.year === "number" ? data.year : 0,
+        season: typeof data.season === "string" ? data.season : undefined,
+        startDate:
+          data.startDate instanceof Timestamp
+            ? data.startDate.toDate().toISOString()
+            : typeof data.startDate === "string"
+              ? data.startDate
+              : "",
+        endDate:
+          data.endDate instanceof Timestamp
+            ? data.endDate.toDate().toISOString()
+            : typeof data.endDate === "string"
+              ? data.endDate
+              : undefined,
+        status:
+          data.status === "active" || data.status === "archived"
+            ? data.status
+            : "active",
+        participants: Array.isArray(data.participants)
+          ? data.participants.filter((id): id is string => typeof id === "string")
+          : [],
+        createdAt:
+          data.createdAt instanceof Timestamp
+            ? data.createdAt.toDate().toISOString()
+            : typeof data.createdAt === "string"
+              ? data.createdAt
+              : new Date().toISOString(),
+      };
+    } catch (error) {
+      if (error instanceof ApiException) {
+        throw error;
+      }
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to fetch ladder",
+        0
+      );
+    }
+  },
+
+  /**
+   * Join a ladder
+   */
+  joinLadder: async (ladderId: string, userId: string): Promise<void> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const ladderDoc = doc(db, "ladders", ladderId);
+      const snapshot = await getDoc(ladderDoc);
+
+      if (!snapshot.exists()) {
+        throw new ApiException("Stegen hittades inte", 404);
+      }
+
+      const data = snapshot.data();
+      const currentParticipants = Array.isArray(data.participants)
+        ? data.participants.filter((id): id is string => typeof id === "string")
+        : [];
+
+      if (currentParticipants.includes(userId)) {
+        return;
+      }
+
+      await updateDoc(ladderDoc, {
+        participants: [...currentParticipants, userId],
+      });
+    } catch (error) {
+      if (error instanceof ApiException) {
+        throw error;
+      }
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to join ladder",
+        0
+      );
+    }
+  },
+
+  /**
+   * Leave a ladder
+   */
+  leaveLadder: async (ladderId: string, userId: string): Promise<void> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const ladderDoc = doc(db, "ladders", ladderId);
+      const snapshot = await getDoc(ladderDoc);
+
+      if (!snapshot.exists()) {
+        throw new ApiException("Stegen hittades inte", 404);
+      }
+
+      const data = snapshot.data();
+      const currentParticipants = Array.isArray(data.participants)
+        ? data.participants.filter((id): id is string => typeof id === "string")
+        : [];
+
+      const updatedParticipants = currentParticipants.filter((id) => id !== userId);
+
+      await updateDoc(ladderDoc, {
+        participants: updatedParticipants,
+      });
+    } catch (error) {
+      if (error instanceof ApiException) {
+        throw error;
+      }
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to leave ladder",
+        0
+      );
+    }
+  },
+
+  /**
+   * Create a new ladder (admin)
+   */
+  createLadder: async (
+    ladder: Omit<Ladder, "id" | "createdAt">
+  ): Promise<Ladder> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const laddersCollection = collection(db, "ladders");
+      const ladderData = {
+        name: ladder.name,
+        year: ladder.year,
+        ...(ladder.season ? { season: ladder.season } : {}),
+        startDate: Timestamp.fromDate(new Date(ladder.startDate)),
+        ...(ladder.endDate
+          ? { endDate: Timestamp.fromDate(new Date(ladder.endDate)) }
+          : {}),
+        status: ladder.status,
+        participants: ladder.participants,
+        createdAt: Timestamp.now(),
+      };
+
+      const docRef = await addDoc(laddersCollection, ladderData);
+
+      return {
+        id: docRef.id,
+        name: ladder.name,
+        year: ladder.year,
+        season: ladder.season,
+        startDate: ladder.startDate,
+        endDate: ladder.endDate,
+        status: ladder.status,
+        participants: ladder.participants,
+        createdAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to create ladder",
+        0
+      );
+    }
+  },
+
+  /**
+   * Archive a ladder (admin)
+   */
+  archiveLadder: async (ladderId: string): Promise<void> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const ladderDoc = doc(db, "ladders", ladderId);
+      await updateDoc(ladderDoc, {
+        status: "archived",
+        endDate: Timestamp.now(),
+      });
+    } catch (error) {
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to archive ladder",
         0
       );
     }

@@ -77,6 +77,7 @@ export interface Booking {
   ladderStatus?: LadderStatus;
   winnerId?: string;
   comment?: string;
+  ladderId?: string;
 }
 
 export interface CreateBookingInput {
@@ -88,6 +89,7 @@ export interface CreateBookingInput {
   ladderStatus?: LadderStatus;
   winnerId?: string;
   comment?: string;
+  ladderId?: string;
 }
 
 // App settings entity (from Firestore)
@@ -101,4 +103,17 @@ export interface Announcement {
   body: string;
   enabled: boolean;
   links?: Array<{ label: string; url: string }>;
+}
+
+// Ladder entity (from Firestore)
+export interface Ladder {
+  id: string;
+  name: string;
+  year: number;
+  season?: string;
+  startDate: string;
+  endDate?: string;
+  status: "active" | "archived";
+  participants: string[];
+  createdAt: string;
 }
