@@ -13,6 +13,7 @@ export const Landing = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [authDialogMode, setAuthDialogMode] = useState<"signin" | "signup">("signin");
 
   const handleLoginSuccess = () => {
     setAuthDialogOpen(false);
@@ -59,18 +60,24 @@ export const Landing = () => {
                 Hantera din tennisklubb med lätthet. Skapa konto eller logga in för att komma igång och få tillgång till alla funktioner.
               </p>
               <div className="flex w-full flex-col justify-center gap-2 sm:flex-row lg:justify-start">
-                <Button 
-                  className="w-full sm:w-auto" 
+                <Button
+                  className="w-full sm:w-auto"
                   size="lg"
-                  onClick={() => setAuthDialogOpen(true)}
+                  onClick={() => {
+                    setAuthDialogMode("signup");
+                    setAuthDialogOpen(true);
+                  }}
                 >
                   Skapa konto
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full sm:w-auto"
                   size="lg"
-                  onClick={() => setAuthDialogOpen(true)}
+                  onClick={() => {
+                    setAuthDialogMode("signin");
+                    setAuthDialogOpen(true);
+                  }}
                 >
                   Logga in
                   <ArrowRight className="ml-2 size-4" />
@@ -96,6 +103,7 @@ export const Landing = () => {
         open={authDialogOpen}
         onOpenChange={setAuthDialogOpen}
         onSuccess={handleLoginSuccess}
+        defaultMode={authDialogMode}
       />
     </>
   );

@@ -8,6 +8,7 @@ import {
   getDocs,
   orderBy,
   query,
+  setDoc,
   Timestamp,
   updateDoc,
 } from "firebase/firestore";
@@ -251,6 +252,52 @@ export const usersApi = {
       }
       throw new ApiException(
         error instanceof Error ? error.message : "Failed to fetch user",
+        0
+      );
+    }
+  },
+
+  /**
+   * Create a user profile document
+   */
+  createUser: async ({
+    uid,
+    email,
+    displayName,
+  }: {
+    uid: string;
+    email: string;
+    displayName?: string;
+  }): Promise<User> => {
+    try {
+      if (!db) {
+        throw new ApiException("Firebase är inte konfigurerat", CLIENT_ERROR_STATUS);
+      }
+
+      const userDoc = doc(db, "users", uid);
+      const createdAt = Timestamp.now();
+      const trimmedDisplayName = displayName?.trim();
+      const userData = {
+        uid,
+        email,
+        createdAt,
+        ...(trimmedDisplayName ? { displayName: trimmedDisplayName } : {}),
+      };
+
+      await setDoc(userDoc, userData);
+
+      return {
+        uid,
+        email,
+        displayName: trimmedDisplayName || undefined,
+        createdAt: createdAt.toDate().toISOString(),
+      };
+    } catch (error) {
+      if (error instanceof ApiException) {
+        throw error;
+      }
+      throw new ApiException(
+        error instanceof Error ? error.message : "Failed to create user",
         0
       );
     }
