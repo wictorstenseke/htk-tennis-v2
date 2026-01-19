@@ -45,6 +45,7 @@ export function AppShell({ children }: AppShellProps) {
   const { user, loading } = useAuth();
   const { data: currentUser } = useCurrentUserQuery();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const isAdmin = canAccessAdmin(currentUser || null);
@@ -68,6 +69,11 @@ export function AppShell({ children }: AppShellProps) {
       e.preventDefault();
       setAuthDialogOpen(true);
     }
+    setMobileMenuOpen(false);
+  };
+
+  const handleMobileNavClick = () => {
+    setMobileMenuOpen(false);
   };
 
   const displayName = user?.displayName || user?.email?.split("@")[0] || "User";
@@ -192,7 +198,7 @@ export function AppShell({ children }: AppShellProps) {
                     Logga in
                   </Button>
                 )}
-                <Sheet>
+                <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                   <SheetTrigger asChild>
                     <Button variant="outline" size="icon">
                       <Menu className="h-4 w-4" />
@@ -212,6 +218,7 @@ export function AppShell({ children }: AppShellProps) {
                       <nav className="flex flex-col gap-4">
                         <Link
                           to="/"
+                          onClick={handleMobileNavClick}
                           className="flex items-center gap-2 text-md font-semibold"
                         >
                           <HomeIcon className="h-4 w-4" />
@@ -227,6 +234,7 @@ export function AppShell({ children }: AppShellProps) {
                         </Link>
                         <Link
                           to="/stegen"
+                          onClick={handleMobileNavClick}
                           className="flex items-center gap-2 text-md font-semibold"
                         >
                           <ListOrdered className="h-4 w-4" />
@@ -235,6 +243,7 @@ export function AppShell({ children }: AppShellProps) {
                         {isAdmin && (
                           <Link
                             to="/admin"
+                            onClick={handleMobileNavClick}
                             className="flex items-center gap-2 text-md font-semibold"
                           >
                             <Settings className="h-4 w-4" />
@@ -262,7 +271,7 @@ export function AppShell({ children }: AppShellProps) {
                             className="w-full justify-start"
                             asChild
                           >
-                            <Link to="/profile">
+                            <Link to="/profile" onClick={handleMobileNavClick}>
                               <UserIcon className="mr-2 h-4 w-4" />
                               Profil
                             </Link>
@@ -270,7 +279,10 @@ export function AppShell({ children }: AppShellProps) {
                           <Button
                             variant="outline"
                             className="w-full justify-start"
-                            onClick={handleSignOut}
+                            onClick={() => {
+                              handleSignOut();
+                              setMobileMenuOpen(false);
+                            }}
                           >
                             <LogOutIcon className="mr-2 h-4 w-4" />
                             Logga ut
