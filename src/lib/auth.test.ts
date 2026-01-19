@@ -18,17 +18,17 @@ vi.mock("@/lib/api", () => ({
   },
 }));
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import { signIn, signOut, signUp } from "@/lib/auth";
-
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  type User,
+  type UserCredential,
 } from "firebase/auth";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { usersApi } from "@/lib/api";
+import { signIn, signOut, signUp } from "@/lib/auth";
 import { createMockAuthUser } from "@/test/factories";
 
 describe("auth", () => {
@@ -43,8 +43,8 @@ describe("auth", () => {
         email: "test@example.com",
       });
       vi.mocked(signInWithEmailAndPassword).mockResolvedValue({
-        user: mockUser,
-      } as any);
+        user: mockUser as User,
+      } as UserCredential);
 
       const user = await signIn("test@example.com", "password123");
 
@@ -73,8 +73,8 @@ describe("auth", () => {
         email: "newuser@example.com",
       });
       vi.mocked(createUserWithEmailAndPassword).mockResolvedValue({
-        user: mockUser,
-      } as any);
+        user: mockUser as User,
+      } as UserCredential);
       vi.mocked(usersApi.createUser).mockResolvedValue({
         uid: "new-user-123",
         email: "newuser@example.com",
@@ -105,8 +105,8 @@ describe("auth", () => {
         displayName: "John Doe",
       });
       vi.mocked(createUserWithEmailAndPassword).mockResolvedValue({
-        user: mockUser,
-      } as any);
+        user: mockUser as User,
+      } as UserCredential);
       vi.mocked(usersApi.createUser).mockResolvedValue({
         uid: "new-user-123",
         email: "newuser@example.com",
@@ -132,8 +132,8 @@ describe("auth", () => {
         email: "newuser@example.com",
       });
       vi.mocked(createUserWithEmailAndPassword).mockResolvedValue({
-        user: mockUser,
-      } as any);
+        user: mockUser as User,
+      } as UserCredential);
       vi.mocked(usersApi.createUser).mockResolvedValue({
         uid: "new-user-123",
         email: "newuser@example.com",
@@ -158,8 +158,8 @@ describe("auth", () => {
         email: "newuser@example.com",
       });
       vi.mocked(createUserWithEmailAndPassword).mockResolvedValue({
-        user: mockUser,
-      } as any);
+        user: mockUser as User,
+      } as UserCredential);
       vi.mocked(usersApi.createUser).mockResolvedValue({
         uid: "new-user-123",
         email: "newuser@example.com",
@@ -183,8 +183,8 @@ describe("auth", () => {
         email: "newuser@example.com",
       });
       vi.mocked(createUserWithEmailAndPassword).mockResolvedValue({
-        user: mockUser,
-      } as any);
+        user: mockUser as User,
+      } as UserCredential);
       vi.mocked(usersApi.createUser).mockRejectedValue(
         new Error("Firestore error")
       );

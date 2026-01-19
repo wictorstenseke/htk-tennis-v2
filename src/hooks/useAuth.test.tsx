@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 
 import { renderHook, waitFor } from "@testing-library/react";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -16,8 +17,6 @@ vi.mock("@/lib/firebase", () => ({
   auth: {},
   isFirebaseConfigured: true,
 }));
-
-import { onAuthStateChanged } from "firebase/auth";
 
 describe("useAuth", () => {
   beforeEach(() => {
@@ -52,7 +51,7 @@ describe("useAuth", () => {
     vi.mocked(onAuthStateChanged).mockImplementation((_auth, callback) => {
       // Simulate user being signed in
       if (typeof callback === "function") {
-        setTimeout(() => callback(mockUser as any), 0);
+        setTimeout(() => callback(mockUser as User), 0);
       }
       return () => {};
     });
@@ -102,7 +101,7 @@ describe("useAuth", () => {
   });
 
   it("should handle multiple auth state changes", async () => {
-    let authCallback: ((user: any) => void) | null = null;
+    let authCallback: ((user: User | null) => void) | null = null;
 
     vi.mocked(onAuthStateChanged).mockImplementation((_auth, callback) => {
       if (typeof callback === "function") {
@@ -121,7 +120,7 @@ describe("useAuth", () => {
     });
 
     // First sign in
-    authCallback!(mockUser1 as any);
+    authCallback!(mockUser1 as User);
 
     await waitFor(() => {
       expect(result.current.user?.uid).toBe("user-1");
@@ -142,7 +141,7 @@ describe("useAuth", () => {
     });
 
     // Sign in with different user
-    authCallback!(mockUser2 as any);
+    authCallback!(mockUser2 as User);
 
     await waitFor(() => {
       expect(result.current.user?.uid).toBe("user-2");

@@ -6,8 +6,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider } from "@tanstack/react-query";
 
 import { laddersApi } from "@/lib/api";
-import { createTestQueryClient } from "@/test/utils";
 import { createMockLadder } from "@/test/factories";
+import { createTestQueryClient } from "@/test/utils";
 
 import {
   ladderKeys,

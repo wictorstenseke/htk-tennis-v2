@@ -1,8 +1,8 @@
 import { Timestamp } from "firebase/firestore";
 
+import type { Booking, Ladder, LadderStatus } from "@/types/api";
 import type { User } from "firebase/auth";
 
-import type { Booking, Ladder, LadderStatus } from "@/types/api";
 
 /**
  * Create a mock Firebase Auth User
